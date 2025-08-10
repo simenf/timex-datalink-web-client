@@ -8,6 +8,8 @@ Based off the great work by https://github.com/synthead/
 
 ## Web Interface
 
+Try it here!
+https://datalink.simenf.com
 ![Timex Datalink Web Client Interface](screenshots/timex-webclient.png)
 
 *The web client features a Windows 98-style interface with calendar integration, device management, and protocol selection.*
