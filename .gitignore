@@ -34,13 +34,12 @@ jspm_packages/
 
 # dotenv environment variables file
 .env
+.env.test
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.production
 
 # IDE files
-.vscode/settings.json
+.vscode/
 .idea/
 *.swp
 *.swo
@@ -55,24 +54,22 @@ jspm_packages/
 ehthumbs.db
 Thumbs.db
 
-# Logs
-logs
-*.log
+# SSL certificates for local development
+*.pem
+*.key
+*.crt
+
+# Test output
+test-results/
+test-reports/
 
 # Temporary files
 tmp/
 temp/
 
-# Build outputs (if any)
+# Log files
+*.log
+
+# Build artifacts (if any)
 dist/
 build/
-
-# SSL certificates for development
-*.pem
-*.key
-*.crt
-
-# Local development files
-debug-*.html
-test-*.html
-local-test-*

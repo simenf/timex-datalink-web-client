@@ -2,7 +2,15 @@
 
 A modern JavaScript implementation of the Timex Datalink client software for browser-based communication with vintage Timex Datalink watches using the Web Serial API.
 
+Based off the great work by https://github.com/synthead/
+
 ![Timex Datalink Watch](https://user-images.githubusercontent.com/820984/209043607-a449b764-42f9-4f92-9a32-cd0665551289.jpg)
+
+## Web Interface
+
+![Timex Datalink Web Client Interface](screenshots/timex-webclient.png)
+
+*The web client features a Windows 98-style interface with calendar integration, device management, and protocol selection.*
 
 ## What is the Timex Datalink?
 
@@ -38,7 +46,7 @@ The Timex Datalink is a watch introduced in 1994 that functions as a small PDA o
 
 1. **Clone and serve the application:**
    ```bash
-   git clone https://github.com/yourusername/timex-datalink-web-client.git
+   git clone https://github.com/simenf/timex-datalink-web-client.git
    cd timex-datalink-web-client
    npm install
    npm run serve
@@ -110,9 +118,13 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Original Ruby implementation by [synthead](https://github.com/synthead/timex_datalink_client)
-- Timex for creating these amazing vintage devices
-- NASA for certifying these watches for space travel!
+This project is a JavaScript port of the excellent Ruby implementation by [synthead](https://github.com/synthead/timex_datalink_client). While completely rewritten for the web platform, it builds upon the protocol research and reverse engineering work done in the original project.
+
+See [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md) for detailed credits and references.
+
+- **Original Ruby implementation**: [synthead/timex_datalink_client](https://github.com/synthead/timex_datalink_client)
+- **Timex Corporation**: For creating these innovative vintage devices
+- **NASA**: For certifying these watches for space travel
 
 ## Fun Fact
 

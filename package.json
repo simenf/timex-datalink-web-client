@@ -1,46 +1,47 @@
 {
   "name": "timex-datalink-web-client",
   "version": "1.0.0",
-  "description": "Modern JavaScript implementation for browser-based communication with vintage Timex Datalink watches using Web Serial API",
-  "type": "module",
+  "description": "Modern JavaScript implementation of Timex Datalink client for browser-based communication with vintage Timex Datalink watches",
   "main": "index.html",
-  "homepage": "https://timex-datalink-web-client.pages.dev",
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 8000 --bind 127.0.0.1",
+    "serve-https": "npx http-server -S -C cert.pem -K key.pem -p 8000",
+    "test": "node tests/run-all-tests.js",
+    "test-helpers": "node tests/helpers/run-helper-tests.js",
+    "test-protocols": "node tests/protocols/run-protocol-tests.js",
+    "lint": "echo 'No linting configured yet'",
+    "build": "echo 'No build step required - pure client-side JavaScript'"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/timex-datalink-web-client.git"
-  },
-  "bugs": {
-    "url": "https://github.com/yourusername/timex-datalink-web-client/issues"
-  },
-  "scripts": {
-    "dev": "npx http-server -p 8000 -c-1 --cors --ssl",
-    "serve": "npx http-server -p 8000 -c-1 --cors --ssl",
-    "build": "echo 'No build step required - static files ready for deployment'",
-    "test": "echo 'Open https://localhost:8000/tests/ in your browser to run tests'",
-    "deploy": "echo 'Push to main branch for automatic Cloudflare Pages deployment'"
+    "url": "git+https://github.com/simenf/timex-datalink-web-client.git"
   },
   "keywords": [
     "timex",
     "datalink",
     "vintage",
     "watch",
-    "serial",
-    "web-serial-api",
-    "javascript",
+    "web-serial",
     "browser",
-    "retro",
-    "pda"
+    "javascript",
+    "pda",
+    "sync"
   ],
-  "author": "Timex Datalink Web Client Contributors",
+  "author": "Your Name <your.email@example.com>",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/timex-datalink-web-client/issues"
+  },
+  "homepage": "https://github.com/yourusername/timex-datalink-web-client#readme",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
   "engines": {
     "node": ">=16.0.0"
   },
   "browserslist": [
     "Chrome >= 89",
     "Edge >= 89"
-  ],
-  "devDependencies": {
-    "http-server": "^14.1.1"
-  }
+  ]
 }
