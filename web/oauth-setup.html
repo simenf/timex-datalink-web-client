@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Calendar OAuth Setup - Timex Datalink Web Client</title>
+    <link rel="stylesheet" href="styles/windows98.css">
+</head>
+<body>
+    <div class="desktop">
+        <div class="window main-window">
+            <div class="title-bar">
+                <div class="title-bar-text">Google Calendar OAuth Setup</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                    <button aria-label="Maximize"></button>
+                    <button aria-label="Close" onclick="window.close()"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="main-content">
+                    <fieldset>
+                        <legend>Setup Instructions</legend>
+                        <div class="setup-content">
+                            <h3>Step 1: Create Google Cloud Project</h3>
+                            <ol>
+                                <li>Go to the <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                                <li>Create a new project or select an existing one</li>
+                                <li>Enable the Google Calendar API for your project</li>
+                            </ol>
+                            
+                            <h3>Step 2: Create OAuth 2.0 Credentials</h3>
+                            <ol>
+                                <li>Go to "APIs & Services" → "Credentials"</li>
+                                <li>Click "Create Credentials" → "OAuth 2.0 Client IDs"</li>
+                                <li>Choose "Web application" as the application type</li>
+                                <li>Add your domain to "Authorized JavaScript origins":</li>
+                                <ul>
+                                    <li><code id="current-origin">http://localhost:8000</code> (or your actual domain)</li>
+                                </ul>
+                                <li>Add your domain to "Authorized redirect URIs":</li>
+                                <ul>
+                                    <li><code id="current-redirect">http://localhost:8000/</code> (or your actual domain)</li>
+                                </ul>
+                                <li>Click "Create" and copy the Client ID</li>
+                            </ol>
+                            
+                            <h3>Step 3: Configure the Web Client</h3>
+                            <ol>
+                                <li>Return to the main application</li>
+                                <li>Go to the "Calendar" tab</li>
+                                <li>Paste your Google Client ID in the input field</li>
+                                <li>Click "Save" to store the credentials</li>
+                                <li>Click "Authenticate with Google" to complete setup</li>
+                            </ol>
+                            
+                            <div class="warning-box">
+                                <h4>⚠️ Important Security Notes:</h4>
+                                <ul>
+                                    <li>Your Client ID will be stored locally in your browser</li>
+                                <li>Never share your Client ID publicly</li>
+                                <li>The app only requests read-only access to your calendar</li>
+                                <li>You can revoke access anytime in your Google Account settings</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="info-box">
+                                <h4>ℹ️ Troubleshooting:</h4>
+                                <ul>
+                                    <li>Make sure your domain is correctly added to authorized origins</li>
+                                    <li>If using localhost, ensure the port matches your server</li>
+                                    <li>Clear browser cache if authentication fails</li>
+                                    <li>Check browser console for detailed error messages</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn default" onclick="window.location.href='index.html'">Return to Main App</button>
+                            <button class="btn" onclick="window.open('https://console.cloud.google.com/', '_blank')">Open Google Cloud Console</button>
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Update the current origin and redirect URI examples
+        document.getElementById('current-origin').textContent = window.location.origin;
+        document.getElementById('current-redirect').textContent = window.location.origin + window.location.pathname.replace('oauth-setup.html', '');
+    </script>
+    
+    <style>
+        .setup-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .setup-content h3 {
+            color: var(--win98-blue);
+            margin: 16px 0 8px 0;
+            font-size: 12px;
+        }
+        
+        .setup-content ol, .setup-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .setup-content li {
+            margin: 4px 0;
+            line-height: 1.4;
+        }
+        
+        .setup-content code {
+            background: var(--win98-bg-light);
+            border: 1px solid var(--win98-border-dark);
+            padding: 2px 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+        }
+        
+        .setup-content a {
+            color: var(--win98-blue);
+            text-decoration: underline;
+        }
+        
+        .warning-box, .info-box {
+            background: var(--win98-bg-light);
+            border: 2px solid var(--win98-border-dark);
+            padding: 8px;
+            margin: 12px 0;
+        }
+        
+        .warning-box h4 {
+            color: var(--win98-red);
+            margin: 0 0 8px 0;
+            font-size: 11px;
+        }
+        
+        .info-box h4 {
+            color: var(--win98-blue);
+            margin: 0 0 8px 0;
+            font-size: 11px;
+        }
+        
+        .warning-box ul, .info-box ul {
+            margin: 0;
+            padding-left: 16px;
+        }
+        
+        .warning-box li, .info-box li {
+            font-size: 10px;
+            line-height: 1.3;
+        }
+    </style>
+</body>
+</html>

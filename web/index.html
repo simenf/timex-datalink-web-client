@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timex Datalink Web Client</title>
+    <link rel="stylesheet" href="styles/windows98.css">
+</head>
+<body>
+    <div class="desktop">
+        <div class="window main-window">
+            <div class="title-bar">
+                <div class="title-bar-text">Timex Datalink Client</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                    <button aria-label="Maximize"></button>
+                    <button aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="status-bar">
+                    <div class="status-text">Ready</div>
+                    <div class="connection-status">Disconnected</div>
+                </div>
+                
+                <div class="main-content">
+                    <div class="device-section">
+                        <fieldset>
+                            <legend>Device Connection</legend>
+                            <div class="connection-controls">
+                                <div class="connection-row">
+                                    <label for="protocol-select">Protocol:</label>
+                                    <select id="protocol-select">
+                                        <option value="3">Protocol 3 (Timex Datalink 150/150s)</option>
+                                        <option value="1">Protocol 1 (Timex Datalink 50/70)</option>
+                                        <option value="4">Protocol 4 (Timex Datalink Internet Messenger)</option>
+                                        <option value="6">Protocol 6 (Motorola Beepwear Pro)</option>
+                                        <option value="7">Protocol 7 (DSI e-BRAIN)</option>
+                                        <option value="9">Protocol 9 (Timex Ironman Triathlon)</option>
+                                    </select>
+                                    <button id="connect-btn" class="btn default">Connect Device</button>
+                                </div>
+                                <div class="connection-row">
+                                    <div id="protocol-info" class="protocol-info">
+                                        <div class="protocol-capabilities">
+                                            <span class="capability-label">Features:</span>
+                                            <span id="protocol-capabilities-list">Select a protocol to see available features</span>
+                                        </div>
+                                        <div class="protocol-details">
+                                            <div id="protocol-functions" class="protocol-functions">
+                                                <span class="functions-label">Available Functions:</span>
+                                                <div id="protocol-functions-list" class="functions-list">Select a protocol to see available functions</div>
+                                            </div>
+                                            <div class="protocol-help">
+                                                <button class="btn small" onclick="window.open('protocol-help.html', '_blank', 'width=800,height=600,scrollbars=yes')">Protocol Help</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="connection-row">
+                                    <label for="byte-sleep">Byte Sleep (ms):</label>
+                                    <input type="number" id="byte-sleep" value="25" min="0" max="1000" style="width: 60px;">
+                                    <label for="packet-sleep">Packet Sleep (ms):</label>
+                                    <input type="number" id="packet-sleep" value="250" min="0" max="5000" style="width: 60px;">
+                                    <label>
+                                        <input type="checkbox" id="verbose-mode"> Verbose Mode
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="device-status">
+                                <div class="status-indicator">
+                                    <span class="status-light" id="connection-light"></span>
+                                    <span id="connection-text">Not Connected</span>
+                                </div>
+                                <div id="device-details" class="device-details hidden">
+                                    <div class="detail-row">
+                                        <span class="detail-label">Port:</span>
+                                        <span id="port-info">-</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Protocol:</span>
+                                        <span id="protocol-info">-</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Status:</span>
+                                        <span id="status-info">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="device-log" class="device-log"></div>
+                        </fieldset>
+                    </div>
+                    
+                    <div class="data-management-section">
+                        <fieldset>
+                            <legend>Watch Data Management</legend>
+                            <div class="tab-container">
+                                <div class="tab-header">
+                                    <div class="tab active" data-tab="time">Time</div>
+                                    <div class="tab" data-tab="alarms">Alarms</div>
+                                    <div class="tab" data-tab="eeprom">EEPROM Data</div>
+                                    <div class="tab" data-tab="calendar">Calendar</div>
+                                    <div class="tab" data-tab="sync">Sync</div>
+                                </div>
+                                
+                                <div class="tab-content">
+                                    <!-- Time Tab -->
+                                    <div id="time-tab" class="tab-panel active">
+                                        <div class="form-row">
+                                            <label for="current-time">Current Time:</label>
+                                            <input type="datetime-local" id="current-time" class="w-full">
+                                            <button id="set-current-time-btn" class="btn small">Set to Now</button>
+                                        </div>
+                                        <div class="form-row">
+                                            <label for="time-zone">Time Zone Offset:</label>
+                                            <select id="time-zone">
+                                                <option value="-12">UTC-12</option>
+                                                <option value="-11">UTC-11</option>
+                                                <option value="-10">UTC-10</option>
+                                                <option value="-9">UTC-9</option>
+                                                <option value="-8">UTC-8 (PST)</option>
+                                                <option value="-7">UTC-7 (MST)</option>
+                                                <option value="-6">UTC-6 (CST)</option>
+                                                <option value="-5" selected>UTC-5 (EST)</option>
+                                                <option value="-4">UTC-4</option>
+                                                <option value="-3">UTC-3</option>
+                                                <option value="-2">UTC-2</option>
+                                                <option value="-1">UTC-1</option>
+                                                <option value="0">UTC</option>
+                                                <option value="1">UTC+1</option>
+                                                <option value="2">UTC+2</option>
+                                                <option value="3">UTC+3</option>
+                                                <option value="4">UTC+4</option>
+                                                <option value="5">UTC+5</option>
+                                                <option value="6">UTC+6</option>
+                                                <option value="7">UTC+7</option>
+                                                <option value="8">UTC+8</option>
+                                                <option value="9">UTC+9</option>
+                                                <option value="10">UTC+10</option>
+                                                <option value="11">UTC+11</option>
+                                                <option value="12">UTC+12</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button id="read-time-btn" class="btn" disabled>Read Time</button>
+                                            <button id="sync-time-btn" class="btn" disabled>Sync Time</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Alarms Tab -->
+                                    <div id="alarms-tab" class="tab-panel hidden">
+                                        <div class="alarm-list">
+                                            <div class="alarm-item">
+                                                <div class="form-row">
+                                                    <label>
+                                                        <input type="checkbox" id="alarm1-enabled"> Alarm 1
+                                                    </label>
+                                                    <input type="time" id="alarm1-time" value="07:00">
+                                                    <select id="alarm1-days">
+                                                        <option value="daily">Daily</option>
+                                                        <option value="weekdays">Weekdays</option>
+                                                        <option value="weekends">Weekends</option>
+                                                        <option value="once">Once</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="alarm-item">
+                                                <div class="form-row">
+                                                    <label>
+                                                        <input type="checkbox" id="alarm2-enabled"> Alarm 2
+                                                    </label>
+                                                    <input type="time" id="alarm2-time" value="12:00">
+                                                    <select id="alarm2-days">
+                                                        <option value="daily">Daily</option>
+                                                        <option value="weekdays">Weekdays</option>
+                                                        <option value="weekends">Weekends</option>
+                                                        <option value="once">Once</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="alarm-item">
+                                                <div class="form-row">
+                                                    <label>
+                                                        <input type="checkbox" id="alarm3-enabled"> Alarm 3
+                                                    </label>
+                                                    <input type="time" id="alarm3-time" value="18:00">
+                                                    <select id="alarm3-days">
+                                                        <option value="daily">Daily</option>
+                                                        <option value="weekdays">Weekdays</option>
+                                                        <option value="weekends">Weekends</option>
+                                                        <option value="once">Once</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button id="read-alarms-btn" class="btn" disabled>Read Alarms</button>
+                                            <button id="write-alarms-btn" class="btn" disabled>Write Alarms</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- EEPROM Data Tab -->
+                                    <div id="eeprom-tab" class="tab-panel hidden">
+                                        <div class="eeprom-section">
+                                            <h4>Phone Numbers</h4>
+                                            <div class="phone-list">
+                                                <div class="phone-item">
+                                                    <input type="text" placeholder="Name" class="phone-name" maxlength="12">
+                                                    <input type="text" placeholder="Phone Number" class="phone-number" maxlength="12">
+                                                </div>
+                                                <div class="phone-item">
+                                                    <input type="text" placeholder="Name" class="phone-name" maxlength="12">
+                                                    <input type="text" placeholder="Phone Number" class="phone-number" maxlength="12">
+                                                </div>
+                                                <div class="phone-item">
+                                                    <input type="text" placeholder="Name" class="phone-name" maxlength="12">
+                                                    <input type="text" placeholder="Phone Number" class="phone-number" maxlength="12">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="eeprom-section">
+                                            <h4>Appointments</h4>
+                                            <div class="appointment-list">
+                                                <div class="appointment-item">
+                                                    <input type="date" class="appointment-date">
+                                                    <input type="time" class="appointment-time">
+                                                    <input type="text" placeholder="Description" class="appointment-desc" maxlength="8">
+                                                </div>
+                                                <div class="appointment-item">
+                                                    <input type="date" class="appointment-date">
+                                                    <input type="time" class="appointment-time">
+                                                    <input type="text" placeholder="Description" class="appointment-desc" maxlength="8">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-actions">
+                                            <button id="read-eeprom-btn" class="btn" disabled>Read EEPROM</button>
+                                            <button id="write-eeprom-btn" class="btn" disabled>Write EEPROM</button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Calendar Tab -->
+                                    <div id="calendar-tab" class="tab-panel hidden">
+                                        <div class="calendar-section">
+                                            <fieldset>
+                                                <legend>Local Calendar</legend>
+                                                <div class="local-calendar-section">
+                                                    <div class="form-row">
+                                                        <button id="open-local-calendar-btn" class="btn default">Open Local Calendar</button>
+                                                        <button id="sync-local-calendar-btn" class="btn" disabled>Sync Local Events to Watch</button>
+                                                    </div>
+                                                    <div class="local-calendar-status">
+                                                        <div id="local-calendar-events-count" class="status-text">No local events loaded</div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset>
+                                                <legend>Google Calendar Integration</legend>
+                                                <div class="auth-section">
+                                                    <div class="auth-status">
+                                                        <div class="status-indicator">
+                                                            <span class="status-light" id="calendar-auth-light"></span>
+                                                            <span id="calendar-auth-text">Not authenticated</span>
+                                                        </div>
+                                                        <div id="calendar-user-info" class="user-info hidden">
+                                                            <div class="detail-row">
+                                                                <span class="detail-label">User:</span>
+                                                                <span id="calendar-user-email">-</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="auth-controls">
+                                                        <div class="form-row">
+                                                            <label for="google-client-id">Google Client ID:</label>
+                                                            <input type="text" id="google-client-id" placeholder="Enter your Google OAuth Client ID" class="w-full">
+                                                            <button id="save-client-id-btn" class="btn small">Save</button>
+                                                            <button class="btn small" onclick="window.open('oauth-setup.html', '_blank')">Setup Help</button>
+                                                        </div>
+                                                        <div class="form-actions">
+                                                            <button id="calendar-auth-btn" class="btn default">Authenticate with Google</button>
+                                                            <button id="calendar-signout-btn" class="btn" disabled>Sign Out</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset>
+                                                <legend>Calendar Events</legend>
+                                                <div class="calendar-controls">
+                                                    <div class="form-row">
+                                                        <button id="fetch-events-btn" class="btn" disabled>Fetch Today's Events</button>
+                                                        <button id="fetch-upcoming-btn" class="btn" disabled>Fetch Upcoming Events</button>
+                                                        <label for="max-events">Max Events:</label>
+                                                        <input type="number" id="max-events" value="10" min="1" max="20" style="width: 60px;">
+                                                    </div>
+                                                </div>
+                                                <div class="calendar-events">
+                                                    <div id="calendar-events-list" class="events-list">
+                                                        <div class="no-events">No events loaded. Authenticate and fetch events to see your calendar.</div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset>
+                                                <legend>Sync to Watch</legend>
+                                                <div class="sync-calendar-controls">
+                                                    <div class="form-row">
+                                                        <label>
+                                                            <input type="checkbox" id="auto-sync-calendar" checked> Auto-sync calendar events
+                                                        </label>
+                                                        <label>
+                                                            <input type="checkbox" id="prioritize-today" checked> Prioritize today's events
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label for="notification-minutes">Notification:</label>
+                                                        <select id="notification-minutes">
+                                                            <option value="">No notification</option>
+                                                            <option value="0">At event time</option>
+                                                            <option value="5" selected>5 minutes before</option>
+                                                            <option value="10">10 minutes before</option>
+                                                            <option value="15">15 minutes before</option>
+                                                            <option value="20">20 minutes before</option>
+                                                            <option value="25">25 minutes before</option>
+                                                            <option value="30">30 minutes before</option>
+                                                        </select>
+                                                        <label>
+                                                            <input type="checkbox" id="clear-existing" checked> Clear existing appointments
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-actions">
+                                                        <button id="sync-calendar-btn" class="btn default" disabled>Sync Calendar to Watch</button>
+                                                        <button id="preview-sync-btn" class="btn" disabled>Preview Sync</button>
+                                                    </div>
+                                                </div>
+                                                <div id="calendar-sync-status" class="sync-status">
+                                                    <div class="status-text">Ready to sync calendar events</div>
+                                                    <div id="sync-preview" class="sync-preview hidden">
+                                                        <h4>Events to sync:</h4>
+                                                        <div id="sync-preview-list" class="preview-list"></div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Sync Tab -->
+                                    <div id="sync-tab" class="tab-panel hidden">
+                                        <div class="sync-controls">
+                                            <button id="read-all-btn" class="btn" disabled>Read All Data</button>
+                                            <button id="write-all-btn" class="btn" disabled>Write All Data</button>
+                                            <button id="test-connection-btn" class="btn" disabled>Test Connection</button>
+                                        </div>
+                                        <div id="sync-progress" class="progress-container hidden">
+                                            <div class="progress-label">Syncing...</div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="sync-status">
+                                            <h4>Current Watch Data</h4>
+                                            <div id="watch-data-display" class="data-display">
+                                                <div class="data-section">
+                                                    <strong>Time:</strong> <span id="display-time">Not read</span>
+                                                </div>
+                                                <div class="data-section">
+                                                    <strong>Alarms:</strong> <span id="display-alarms">Not read</span>
+                                                </div>
+                                                <div class="data-section">
+                                                    <strong>EEPROM:</strong> <span id="display-eeprom">Not read</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="js/window-manager.js"></script>
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

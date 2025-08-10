@@ -1,0 +1,28 @@
+{
+  "name": "timex-datalink-web-client",
+  "version": "0.1.0",
+  "description": "JavaScript port of the Ruby Timex Datalink Client library for browser-based communication with vintage Timex Datalink watches",
+  "type": "module",
+  "main": "lib/timex-datalink-client.js",
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "test": "echo 'Open http://localhost:8000/tests/test-runner.html in your browser'"
+  },
+  "keywords": [
+    "timex",
+    "datalink",
+    "vintage",
+    "watch",
+    "serial",
+    "web-serial-api"
+  ],
+  "author": "Timex Datalink Web Client",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "Chrome >= 89",
+    "Edge >= 89"
+  ]
+}

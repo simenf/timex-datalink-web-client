@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timex Datalink Client Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-suite {
+            background: white;
+            border: 1px solid #ccc;
+            margin: 10px 0;
+            padding: 15px;
+        }
+        .test-case {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .test-pass {
+            color: green;
+        }
+        .test-fail {
+            color: red;
+        }
+        .test-output {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #ccc;
+        }
+        .summary {
+            background: #e8f4f8;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #b8d4da;
+        }
+    </style>
+</head>
+<body>
+    <h1>Timex Datalink Client Test Suite</h1>
+    <div id="test-output"></div>
+    
+    <script type="module">
+        import { runAllTests } from './test-suite.js';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const outputDiv = document.getElementById('test-output');
+            
+            try {
+                const results = await runAllTests();
+                
+                let html = '';
+                let totalTests = 0;
+                let passedTests = 0;
+                
+                for (const [suiteName, suiteResults] of Object.entries(results)) {
+                    html += `<div class="test-suite">`;
+                    html += `<h2>${suiteName}</h2>`;
+                    
+                    for (const result of suiteResults) {
+                        totalTests++;
+                        const status = result.passed ? 'test-pass' : 'test-fail';
+                        const icon = result.passed ? '✓' : '✗';
+                        
+                        if (result.passed) passedTests++;
+                        
+                        html += `<div class="test-case ${status}">`;
+                        html += `${icon} ${result.name}`;
+                        if (result.error) {
+                            html += `<div class="test-output">Error: ${result.error}</div>`;
+                        }
+                        html += `</div>`;
+                    }
+                    
+                    html += `</div>`;
+                }
+                
+                html += `<div class="summary">`;
+                html += `<h3>Test Summary</h3>`;
+                html += `<p>Total: ${totalTests}, Passed: ${passedTests}, Failed: ${totalTests - passedTests}</p>`;
+                html += `<p>Success Rate: ${totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0}%</p>`;
+                html += `</div>`;
+                
+                outputDiv.innerHTML = html;
+                
+            } catch (error) {
+                outputDiv.innerHTML = `<div class="test-fail">Test runner error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

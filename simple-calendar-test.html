@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calendar Test</title>
+    <link rel="stylesheet" href="web/styles/windows98.css">
+</head>
+<body>
+    <div class="desktop">
+        <div class="window main-window">
+            <div class="title-bar">
+                <div class="title-bar-text">Simple Calendar Test</div>
+            </div>
+            <div class="window-body">
+                <button id="test-btn" class="btn default">Test Calendar</button>
+                <div id="status" style="margin-top: 10px; font-weight: bold;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import window manager first
+        import { WindowManager } from './web/js/window-manager.js';
+        
+        // Initialize window manager
+        const windowManager = new WindowManager();
+        
+        // Make it globally available
+        window.windowManager = windowManager;
+        
+        const statusDiv = document.getElementById('status');
+        
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+            console.log(message);
+        }
+        
+        document.getElementById('test-btn').addEventListener('click', async () => {
+            updateStatus('Testing...');
+            
+            try {
+                // Test 1: Simple window creation
+                updateStatus('Creating simple window...');
+                const simpleWindow = windowManager.createWindow({
+                    title: 'Simple Test Window',
+                    content: '<p>Hello World!</p>',
+                    width: '300px',
+                    height: '200px',
+                    left: '100px',
+                    top: '100px'
+                });
+                
+                if (simpleWindow && document.contains(simpleWindow)) {
+                    updateStatus('Simple window created successfully!');
+                    
+                    // Test 2: Import and create calendar
+                    setTimeout(async () => {
+                        try {
+                            updateStatus('Importing CalendarUI...');
+                            const { CalendarUI } = await import('./web/js/calendar-ui.js');
+                            
+                            updateStatus('Creating CalendarUI...');
+                            const calendarUI = new CalendarUI(windowManager);
+                            
+                            updateStatus('Opening calendar...');
+                            const calendarWindow = calendarUI.openCalendar();
+                            
+                            if (calendarWindow && document.contains(calendarWindow)) {
+                                updateStatus('Calendar opened successfully!');
+                            } else {
+                                updateStatus('Calendar window not found in DOM');
+                            }
+                            
+                        } catch (error) {
+                            updateStatus('Calendar error: ' + error.message);
+                            console.error(error);
+                        }
+                    }, 1000);
+                    
+                } else {
+                    updateStatus('Simple window creation failed');
+                }
+                
+            } catch (error) {
+                updateStatus('Error: ' + error.message);
+                console.error(error);
+            }
+        });
+        
+        updateStatus('Ready - Click Test Calendar');
+    </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocol Help - Timex Datalink Web Client</title>
+    <link rel="stylesheet" href="styles/windows98.css">
+</head>
+<body>
+    <div class="desktop">
+        <div class="window main-window">
+            <div class="title-bar">
+                <div class="title-bar-text">Protocol Help</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize"></button>
+                    <button aria-label="Maximize"></button>
+                    <button aria-label="Close" onclick="window.close()"></button>
+                </div>
+            </div>
+            <div class="window-body">
+                <h2>Timex Datalink Protocol Guide</h2>
+                
+                <div class="protocol-help-section">
+                    <h3>Protocol Implementation Status</h3>
+                    <p>The Timex Datalink Web Client now supports all protocol versions with complete implementations:</p>
+                    
+                    <div class="protocol-status-list">
+                        <div class="protocol-item fully-implemented">
+                            <h4>Protocol 1 - Fully Implemented ✅</h4>
+                            <p><strong>Devices:</strong> Timex Datalink 50, Timex Datalink 70</p>
+                            <p><strong>Features:</strong> Complete implementation with full sync capabilities</p>
+                            <ul>
+                                <li>Time and date synchronization</li>
+                                <li>Time zone names (3 characters)</li>
+                                <li>Up to 5 alarms with messages</li>
+                                <li>Phone numbers with names</li>
+                                <li>Appointments with dates/times</li>
+                                <li>Anniversaries</li>
+                                <li>To-do lists with priorities</li>
+                                <li>EEPROM data management</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="protocol-item fully-implemented">
+                            <h4>Protocol 3 - Fully Implemented ✅</h4>
+                            <p><strong>Devices:</strong> Timex Datalink 150, Timex Datalink 150s</p>
+                            <p><strong>Features:</strong> Complete implementation with full sync capabilities</p>
+                            <ul>
+                                <li>Time synchronization</li>
+                                <li>Up to 5 alarms</li>
+                                <li>EEPROM data (phone numbers, appointments)</li>
+                                <li>Sound options and themes</li>
+                                <li>Wrist app management</li>
+                                <li>Google Calendar integration</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="protocol-item fully-implemented">
+                            <h4>Protocol 4 - Fully Implemented ✅</h4>
+                            <p><strong>Devices:</strong> Timex Datalink Internet Messenger, Timex Datalink USB</p>
+                            <p><strong>Features:</strong> Complete implementation with bidirectional sync</p>
+                            <ul>
+                                <li>Time with multiple date formats</li>
+                                <li>Time zone names</li>
+                                <li>Up to 5 alarms with messages</li>
+                                <li>EEPROM data (appointments, anniversaries, phone numbers, lists)</li>
+                                <li>Sound options (hourly chime, button beep)</li>
+                                <li>Custom sound themes (.SPC files)</li>
+                                <li>Wrist applications (.ZAP files)</li>
+                                <li>Bidirectional data sync</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="protocol-item fully-implemented">
+                            <h4>Protocol 6 - Fully Implemented ✅</h4>
+                            <p><strong>Devices:</strong> Motorola Beepwear Pro</p>
+                            <p><strong>Features:</strong> Complete implementation with pager-specific features</p>
+                            <ul>
+                                <li>Time with timezone support</li>
+                                <li>FLEXtime support for automatic time updates</li>
+                                <li>Up to 8 alarms with extended messages</li>
+                                <li>Pager auto on/off times</li>
+                                <li>Pager alert sounds (6 options)</li>
+                                <li>Night mode settings</li>
+                                <li>Indiglo timeout configuration</li>
+                                <li>Sound and scroll options</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="protocol-item fully-implemented">
+                            <h4>Protocol 7 - Fully Implemented ✅</h4>
+                            <p><strong>Devices:</strong> DSI e-BRAIN</p>
+                            <p><strong>Features:</strong> Complete implementation with educational features</p>
+                            <ul>
+                                <li>Calendar events and activities</li>
+                                <li>Educational games (Memory, Fortune Teller, etc.)</li>
+                                <li>Countdown timer with custom sounds</li>
+                                <li>Speech synthesis</li>
+                                <li>Custom phrases with vocabulary builder</li>
+                                <li>Device and user nicknames</li>
+                                <li>Phone numbers</li>
+                                <li>Morse code practice</li>
+                            </ul>
+                            <p><strong>Note:</strong> This protocol doesn't support traditional time/alarm features</p>
+                        </div>
+                        
+                        <div class="protocol-item fully-implemented">
+                            <h4>Protocol 9 - Fully Implemented ✅</h4>
+                            <p><strong>Devices:</strong> Timex Ironman Triathlon</p>
+                            <p><strong>Features:</strong> Complete implementation with sports timing features</p>
+                            <ul>
+                                <li>Time and date synchronization</li>
+                                <li>Time zone names (3 characters)</li>
+                                <li>Up to 10 alarms with 16-character messages</li>
+                                <li>Multiple timers with labels</li>
+                                <li>Timer end actions (stop, repeat, start chrono)</li>
+                                <li>Sound options (hourly chime, button beep)</li>
+                                <li>EEPROM data storage</li>
+                                <li>Chronograph configuration</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="protocol-help-section">
+                    <h3>Using the Protocols</h3>
+                    <p>All protocols are now fully implemented with complete functionality:</p>
+                    <ul>
+                        <li><strong>Device Communication:</strong> Full bidirectional communication where supported</li>
+                        <li><strong>Data Synchronization:</strong> Complete time, alarm, and EEPROM data sync</li>
+                        <li><strong>Device-Specific Features:</strong> All unique features for each device type</li>
+                    </ul>
+                    
+                    <h4>Available Features:</h4>
+                    <ul>
+                        <li>Time and date synchronization</li>
+                        <li>Alarm management (device-specific limits)</li>
+                        <li>EEPROM data reading/writing</li>
+                        <li>Calendar sync integration (where applicable)</li>
+                        <li>Sound options and themes</li>
+                        <li>Device-specific features (pager options, games, etc.)</li>
+                    </ul>
+                    
+                    <h4>Protocol-Specific Features:</h4>
+                    <ul>
+                        <li><strong>Protocol 1:</strong> Basic time/alarm sync with EEPROM data</li>
+                        <li><strong>Protocol 3:</strong> Sound themes and wrist apps</li>
+                        <li><strong>Protocol 4:</strong> Bidirectional sync with advanced features</li>
+                        <li><strong>Protocol 6:</strong> Pager-specific options and night mode</li>
+                        <li><strong>Protocol 7:</strong> Educational games and speech synthesis</li>
+                        <li><strong>Protocol 9:</strong> Sports timing and multiple timers</li>
+                    </ul>
+                </div>
+                
+                <div class="protocol-help-section">
+                    <h3>Development Status</h3>
+                    <p>This web client is a complete JavaScript port of the original Ruby Timex Datalink Client library. All protocols have been successfully ported with full functionality maintained.</p>
+                    
+                    <p><strong>Implementation Complete:</strong> All six supported protocols (1, 3, 4, 6, 7, 9) are now fully implemented with byte-for-byte compatibility with the original Ruby library.</p>
+                </div>
+                
+                <div class="protocol-help-section">
+                    <h3>Getting Help</h3>
+                    <p>If you have questions about protocol support or need help with your specific device:</p>
+                    <ul>
+                        <li>Check the protocol-specific function lists in the main interface</li>
+                        <li>Refer to the original Ruby documentation for advanced usage</li>
+                        <li>Test device connectivity before attempting data sync</li>
+                        <li>Use the appropriate protocol for your specific device model</li>
+                    </ul>
+                </div>
+                
+                <div class="form-actions">
+                    <button onclick="window.close()" class="btn default">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

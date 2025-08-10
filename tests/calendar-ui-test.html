@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Calendar UI Test</title>
+    <link rel="stylesheet" href="../web/styles/windows98.css">
+    <style>
+        body {
+            padding: 20px;
+            background: var(--win98-desktop);
+        }
+        .test-controls {
+            background: var(--win98-bg);
+            border: 2px solid var(--win98-border-dark);
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h3>Local Calendar UI Test</h3>
+        <button id="open-calendar-btn" class="btn default">Open Local Calendar</button>
+        <button id="add-test-events-btn" class="btn">Add Test Events</button>
+        <button id="clear-events-btn" class="btn">Clear All Events</button>
+        <div id="status" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <script type="module">
+        import { CalendarUI } from '../web/js/calendar-ui.js';
+        import { WindowManager } from '../web/js/window-manager.js';
+
+        // Initialize window manager
+        const windowManager = new WindowManager();
+        let calendarUI = null;
+
+        // Status display
+        const statusDiv = document.getElementById('status');
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+            console.log(message);
+        }
+
+        // Open calendar button
+        document.getElementById('open-calendar-btn').addEventListener('click', () => {
+            try {
+                if (!calendarUI) {
+                    calendarUI = new CalendarUI(windowManager);
+                    
+                    calendarUI.onEventsChange = () => {
+                        updateStatus('Calendar events changed');
+                    };
+                    
+                    calendarUI.onEventSelect = (appointments) => {
+                        updateStatus(`Selected ${appointments.length} appointments for sync`);
+                    };
+                }
+                
+                calendarUI.openCalendar();
+                updateStatus('Calendar opened successfully');
+                
+            } catch (error) {
+                updateStatus(`Error opening calendar: ${error.message}`);
+                console.error(error);
+            }
+        });
+
+        // Add test events button
+        document.getElementById('add-test-events-btn').addEventListener('click', () => {
+            try {
+                if (!calendarUI) {
+                    updateStatus('Please open calendar first');
+                    return;
+                }
+
+                const today = new Date();
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+
+                // Add some test events
+                calendarUI.calendar.addEvent({
+                    title: 'Morning Meeting',
+                    description: 'Team standup meeting',
+                    date: today.toISOString().split('T')[0],
+                    startTime: `${today.toISOString().split('T')[0]}T09:00:00`,
+                    endTime: `${today.toISOString().split('T')[0]}T10:00:00`,
+                    allDay: false
+                });
+
+                calendarUI.calendar.addEvent({
+                    title: 'Lunch Break',
+                    description: 'Time for lunch',
+                    date: today.toISOString().split('T')[0],
+                    startTime: `${today.toISOString().split('T')[0]}T12:00:00`,
+                    endTime: `${today.toISOString().split('T')[0]}T13:00:00`,
+                    allDay: false
+                });
+
+                calendarUI.calendar.addEvent({
+                    title: 'All Day Event',
+                    description: 'This is an all-day event',
+                    date: tomorrow.toISOString().split('T')[0],
+                    allDay: true
+                });
+
+                calendarUI.calendar.addEvent({
+                    title: 'Watch Sync Test Event',
+                    description: 'Test event for watch sync',
+                    date: tomorrow.toISOString().split('T')[0],
+                    startTime: `${tomorrow.toISOString().split('T')[0]}T15:30:00`,
+                    endTime: `${tomorrow.toISOString().split('T')[0]}T16:30:00`,
+                    allDay: false
+                });
+
+                // Update the calendar view
+                if (calendarUI.calendarWindow) {
+                    calendarUI.updateCalendarView();
+                    calendarUI.updateTodaysEvents();
+                }
+
+                updateStatus('Added 4 test events successfully');
+
+            } catch (error) {
+                updateStatus(`Error adding test events: ${error.message}`);
+                console.error(error);
+            }
+        });
+
+        // Clear events button
+        document.getElementById('clear-events-btn').addEventListener('click', () => {
+            try {
+                if (!calendarUI) {
+                    updateStatus('Please open calendar first');
+                    return;
+                }
+
+                calendarUI.calendar.clearAllEvents();
+                
+                // Update the calendar view
+                if (calendarUI.calendarWindow) {
+                    calendarUI.updateCalendarView();
+                    calendarUI.updateTodaysEvents();
+                }
+
+                updateStatus('All events cleared successfully');
+
+            } catch (error) {
+                updateStatus(`Error clearing events: ${error.message}`);
+                console.error(error);
+            }
+        });
+
+        // Initial status
+        updateStatus('Ready - Click "Open Local Calendar" to begin testing');
+
+        // Test the LocalCalendar class directly
+        console.log('Running basic LocalCalendar tests...');
+        
+        import('../tests/local-calendar.test.js').then(() => {
+            console.log('LocalCalendar tests loaded');
+        }).catch(error => {
+            console.log('LocalCalendar tests not available:', error.message);
+        });
+    </script>
+</body>
+</html>
