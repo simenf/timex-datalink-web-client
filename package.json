@@ -11,7 +11,9 @@
     "test-helpers": "node tests/helpers/run-helper-tests.js",
     "test-protocols": "node tests/protocols/run-protocol-tests.js",
     "lint": "echo 'No linting configured yet'",
-    "build": "echo 'No build step required - pure client-side JavaScript'"
+    "build": "node build.js",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name timex-datalink-web-client",
+    "deploy:preview": "npm run build && wrangler pages deploy dist --project-name timex-datalink-web-client --compatibility-date 2024-01-01"
   },
   "repository": {
     "type": "git",
