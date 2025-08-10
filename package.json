@@ -1,12 +1,23 @@
 {
   "name": "timex-datalink-web-client",
-  "version": "0.1.0",
-  "description": "JavaScript port of the Ruby Timex Datalink Client library for browser-based communication with vintage Timex Datalink watches",
+  "version": "1.0.0",
+  "description": "Modern JavaScript implementation for browser-based communication with vintage Timex Datalink watches using Web Serial API",
   "type": "module",
-  "main": "lib/timex-datalink-client.js",
+  "main": "index.html",
+  "homepage": "https://timex-datalink-web-client.pages.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/timex-datalink-web-client.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/timex-datalink-web-client/issues"
+  },
   "scripts": {
-    "serve": "python -m http.server 8000",
-    "test": "echo 'Open http://localhost:8000/tests/test-runner.html in your browser'"
+    "dev": "npx http-server -p 8000 -c-1 --cors --ssl",
+    "serve": "npx http-server -p 8000 -c-1 --cors --ssl",
+    "build": "echo 'No build step required - static files ready for deployment'",
+    "test": "echo 'Open https://localhost:8000/tests/ in your browser to run tests'",
+    "deploy": "echo 'Push to main branch for automatic Cloudflare Pages deployment'"
   },
   "keywords": [
     "timex",
@@ -14,15 +25,22 @@
     "vintage",
     "watch",
     "serial",
-    "web-serial-api"
+    "web-serial-api",
+    "javascript",
+    "browser",
+    "retro",
+    "pda"
   ],
-  "author": "Timex Datalink Web Client",
+  "author": "Timex Datalink Web Client Contributors",
   "license": "MIT",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "browserslist": [
     "Chrome >= 89",
     "Edge >= 89"
-  ]
+  ],
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
 }

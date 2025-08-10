@@ -1,155 +1,119 @@
-# Timex Datalink library for Ruby
+# Timex Datalink Web Client
 
-Here is a fully-tested, feature-complete, and byte-for-byte perfect reimplementation of all the various Timex Datalink
-client software as a Ruby library!  This library supports every Datalink device manufactured, which includes protocols
-1, 3, 4, 6, 7, and 9!
+A modern JavaScript implementation of the Timex Datalink client software for browser-based communication with vintage Timex Datalink watches using the Web Serial API.
 
-These devices have been tested to work with this library:
+![Timex Datalink Watch](https://user-images.githubusercontent.com/820984/209043607-a449b764-42f9-4f92-9a32-cd0665551289.jpg)
+
+## What is the Timex Datalink?
+
+The Timex Datalink is a watch introduced in 1994 that functions as a small PDA on your wrist. The early models have an optical sensor that receives data via visible light patterns. This web client enables modern browsers to communicate with these vintage devices using the Web Serial API.
+
+## Features
+
+- **Protocol Support**: Implements protocols 1, 3, 4, 6, 7, and 9 for various Timex Datalink devices
+- **Web Serial API**: Direct browser communication with serial devices
+- **Modern Interface**: Windows 98-style web interface for nostalgic experience
+- **Calendar Integration**: Sync with Google Calendar and local calendar data
+- **Device Management**: Set time, alarms, appointments, and phone numbers
+- **Hardware Compatibility**: Works with Notebook Adapter or compatible Arduino devices
+
+## Supported Devices
 
 - Timex Datalink 50 (protocol 1)
-- Timex Datalink 70 (protocol 1)
+- Timex Datalink 70 (protocol 1)  
 - Timex Datalink 150 (protocol 3)
 - Timex Datalink 150s (protocol 4)
 - Timex Ironman Triathlon (protocol 9)
 - Motorola Beepwear Pro (protocol 6)
-- Franklin Rolodex Flash PC Companion RFLS-8 (protocol 1)
-- Royal FL95 PC Organizer (protocol 1)
 - DSI e-BRAIN (protocol 7)
+- Various PDAs and organizers
 
-## What is the Timex Datalink?
+## Browser Requirements
 
-The Timex Datalink is a watch that was introduced in 1994 that is essentially a small PDA on your wrist.  The early
-models (supported by this software) have an optical sensor on the top of the face that receives data via visible light.
+- Chrome 89+ or Edge 89+
+- Web Serial API support
+- HTTPS connection (required for Web Serial API)
 
-<image src="https://user-images.githubusercontent.com/820984/209043607-a449b764-42f9-4f92-9a32-cd0665551289.jpg" width="600px">
+## Quick Start
 
-The original data transfer method involves
-[drawing patterns of lines on a CRT monitor](https://www.youtube.com/watch?v=p3Pzxmq-JLM) for the watch to receive with
-its optical sensor.  CRTs use electron guns that draw scan lines one-by-one from top to bottom, then they return to the
-top in preparation for the next frame.  This means that the electron guns turn on when they're drawing a white line, and
-and turn off when they're drawing the black background.  This produces flashing light as the graphics are drawn, which
-is ultimately received by the optical sensor and decoded by the Timex Datalink device.
+1. **Clone and serve the application:**
+   ```bash
+   git clone https://github.com/yourusername/timex-datalink-web-client.git
+   cd timex-datalink-web-client
+   npm install
+   npm run serve
+   ```
 
-Have a CRT monitor?  Use this library with [timex\_datalink\_crt](https://github.com/synthead/timex_datalink_crt) to
-transfer data with your CRT!
+2. **Open in browser:**
+   Navigate to `https://localhost:8000` (HTTPS required for Web Serial API)
 
-<image src="https://user-images.githubusercontent.com/820984/188436622-8cac39c7-9edc-4d92-a8c7-cbe9774cb691.jpg" width="600px">
+3. **Connect your device:**
+   - Connect your Timex Datalink Notebook Adapter or compatible device
+   - Click "Connect Device" in the web interface
+   - Select your serial device from the browser prompt
 
-For laptop users, Timex also offered the Datalink Notebook Adapter.  Instead of using a CRT monitor, the Notebook
-Adapter simply flashed a single LED light.  This adapter is fully supported by the Timex Datalink software, and sends
-the same data as a CRT.
+4. **Sync your watch:**
+   - Put your watch in COMM MODE
+   - Select the appropriate protocol for your device
+   - Use the interface to set time, alarms, or sync calendar data
 
-<image src="https://user-images.githubusercontent.com/820984/188438526-80752f6a-ef5d-42e9-bf46-e8b10a307a18.png" width="600px">
+## Development
 
-This library communicates with the Datalink Notebook Adapter to emit data to your Timex Datalink watch.  Don't have a
-Notebook Adapter?  [Use a Teensy LC instead](https://github.com/synthead/timex-datalink-arduino)!
+```bash
+# Install dependencies
+npm install
 
-<image src="https://user-images.githubusercontent.com/820984/188439596-12b4ff61-7d52-4203-b439-740dbd094657.png" width="600px">
+# Start development server
+npm run serve
 
-As a fun tidbit, these watches are flight certified by NASA and is one of four watches qualified by NASA for space
-travel!  Here's a shot of James H. Newman wearing a Datalink watch on the Space Shuttle for STS-88!
-
-<image src="https://user-images.githubusercontent.com/820984/188442622-13ff7be5-4cf6-488e-936b-ca8874648467.png" width="600px">
-
-In addition, the Datalink protocol is also used in some other watches, organizers, and toys, i.e. the Motorola Beepwear
-Pro, Royal FL95, Tiger PDA2000, Franklin Rolodex Flash PC Companion RFLS-8, and DSI e-BRAIN 69006.
-
-## Installing Ruby and the timex\_datalink\_client gem
-
-If you need to install Ruby, follow the
-[Ruby installation instructions](https://www.ruby-lang.org/en/documentation/installation) first.  The oldest supported
-version is 3.1.0, so make sure to have Ruby 3.1.0 or greater installed.
-
-Then, with Ruby installed, run this command to install the timex\_datalink\_client gem:
-
-```shell
-gem install timex_datalink_client
+# Run tests
+npm test
 ```
 
-You're done!  From here, continue reading the documentation for which protocol to use and follow the code examples below.
+## Protocol Documentation
 
-## Determining the protocol to use
+Each protocol is documented with implementation details:
 
-On Timex Datalink watches, press the MODE button until "COMM MODE" is displayed.  "COMM READY" will appear.  This is
-sometimes accompanied by a version number.  Use the table below to identify the protocol.
+- [Protocol 1](docs/timex_datalink_protocol_1.md) - Timex Datalink 50 & 70
+- [Protocol 3](docs/timex_datalink_protocol_3.md) - Timex Datalink 150  
+- [Protocol 4](docs/timex_datalink_protocol_4.md) - Timex Datalink 150s
+- [Protocol 6](docs/motorola_beepwear_pro_protocol_6.md) - Motorola Beepwear Pro
+- [Protocol 7](docs/dsi_ebrain_protocol_7.md) - DSI e-BRAIN
+- [Protocol 9](docs/timex_ironman_triathlon_protocol_9.md) - Timex Ironman Triathlon
 
-<table>
-  <tr>
-    <th>Watch display</th>
-    <th>Protocol compatibility</th>
-  </tr>
+## Hardware Setup
 
-  <tr>
-    <td>
-      <image src="https://user-images.githubusercontent.com/820984/189607899-5bb67438-1c82-41e0-95d1-d1134cfb1f8b.png">
-    </td>
-    <td>Use protocol 1 models in <code>TimexDatalinkClient::Protocol1</code></td>
-  </tr>
+### Using the Original Notebook Adapter
+Connect your Timex Datalink Notebook Adapter to a USB-to-serial converter, then connect to your computer.
 
-  <tr>
-    <td>
-      <image src="https://user-images.githubusercontent.com/820984/189609399-25eea5c5-958e-489d-936e-139342c9fddf.png">
-    </td>
-    <td>Use protocol 3 models in <code>TimexDatalinkClient::Protocol3</code></td>
-  </tr>
+### Using Arduino/Teensy
+Build a compatible adapter using the [Timex Datalink Arduino project](https://github.com/synthead/timex-datalink-arduino).
 
-  <tr>
-    <td>
-      <image src="https://user-images.githubusercontent.com/820984/189609671-33a6dc6b-1eb1-4942-8bac-238e6056d1c2.png">
-    </td>
-    <td>Use protocol 4 models in <code>TimexDatalinkClient::Protocol4</code></td>
-  </tr>
+## Deployment
 
-  <tr>
-    <td>
-      <image src="https://user-images.githubusercontent.com/820984/190122029-6df17bd0-171a-425c-ac63-d415eeb9fffd.png">
-    </td>
-    <td>Use protocol 9 models in <code>TimexDatalinkClient::Protocol9</code></td>
-  </tr>
+This application is designed to work with:
+- **Cloudflare Pages**: Automatic deployment from GitHub
+- **GitHub Pages**: Static site hosting
+- **Any static host**: All files are client-side JavaScript
 
-  <tr>
-    <td>
-      <image src="https://user-images.githubusercontent.com/820984/190326340-3ffba239-ea9e-4595-83ae-c261be284a30.png">
-    </td>
-    <td>Use protocol 6 models in <code>TimexDatalinkClient::Protocol6</code></td>
-  </tr>
-</table>
+## Contributing
 
-During data transmission, the "start" packet of each protocol will announce the protocol number to the device.  If the
-protocol doesn't match the device, the screen will display "PC-WATCH MISMATCH" and safely abort the data transmission.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test with actual hardware when possible
+5. Submit a pull request
 
-Most non-Timex devices use protocol 1, so start with protocol 1 if the protocol can't be identified.
+## License
 
-## Protocol documentation
+MIT License - see [LICENSE](LICENSE) file for details.
 
-Each protocol is individually documented with their own code examples:
+## Acknowledgments
 
-- [Using TimexDatalinkClient with Protocol 1](docs/timex_datalink_protocol_1.md) (Timex Datalink 50 & 70, various PDAs)
-- [Using TimexDatalinkClient with Protocol 3](docs/timex_datalink_protocol_3.md) (Timex Datalink 150)
-- [Using TimexDatalinkClient with Protocol 4](docs/timex_datalink_protocol_4.md) (Timex Datalink 150s)
-- [Using TimexDatalinkClient with Protocol 6](docs/motorola_beepwear_pro_protocol_6.md) (Motorola Beepwear Pro)
-- [Using TimexDatalinkClient with Protocol 7](docs/dsi_ebrain_protocol_7.md) (DSI e-BRAIN)
-- [Using TimexDatalinkClient with Protocol 9](docs/timex_ironman_triathlon_protocol_9.md) (Timex Ironman Triathlon)
+- Original Ruby implementation by [synthead](https://github.com/synthead/timex_datalink_client)
+- Timex for creating these amazing vintage devices
+- NASA for certifying these watches for space travel!
 
-## Tuning data transfer performance
+## Fun Fact
 
-After every byte is sent to the watch, a small delay is necessary before advancing to the next byte.  This gives the
-watch time to decode and store the incoming data.  In addition, an additional delay is necessary after sending a packet
-of data (bytes that represent a piece of data, i.e. an alarm).
-
-The byte and packet sleep time defaults to the same rate of the Timex Datalink software for parity.  This is 0.025
-seconds per byte, and 0.25 seconds per packet.  These two sleep times can be tuned with the `byte_sleep` and
-`packet_sleep` keywords when creating a `TimexDatalinkClient` instance.
-
-In practice, much smaller values can be used for a much higher data rate.  In testing, these values seem to work
-reliably with the [Teensy LC Notebook Adapter](https://github.com/synthead/timex-datalink-arduino):
-
-```ruby
-timex_datalink_client = TimexDatalinkClient.new(
-  serial_device: "/dev/ttyACM0",
-  models: models,
-  byte_sleep: 0.008,
-  packet_sleep: 0.06,
-  verbose: true
-)
-```
+These watches are flight certified by NASA and qualified for space travel. James H. Newman wore a Datalink watch on Space Shuttle mission STS-88!
