@@ -21,14 +21,7 @@ const INCLUDE_PATTERNS = [
   // Styles
   'styles/**/*',
   
-  // Documentation (for web access)
-  'docs/**/*.md',
-  
-  // Examples (for web access)
-  'examples/**/*.js',
-  
-  // Screenshots (for web display)
-  'screenshots/**/*'
+
 ];
 
 // Files and directories to exclude
