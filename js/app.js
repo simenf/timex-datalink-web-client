@@ -38,6 +38,20 @@ class TimexDatalinkApp {
         this.writeDataBtn = document.getElementById('write-data-btn');
         this.testConnectionBtn = document.getElementById('test-connection-btn');
         
+        // Advanced feature elements
+        this.writeAdvancedBtn = document.getElementById('write-advanced-btn');
+        this.readAdvancedBtn = document.getElementById('read-advanced-btn');
+        this.uploadWristAppBtn = document.getElementById('upload-wrist-app-btn');
+        this.uploadSoundThemeBtn = document.getElementById('upload-sound-theme-btn');
+        this.wristAppFile = document.getElementById('wrist-app-file');
+        this.soundThemeFile = document.getElementById('sound-theme-file');
+        this.wristAppStatus = document.getElementById('wrist-app-status');
+        this.soundThemeStatus = document.getElementById('sound-theme-status');
+        
+        // Advanced feature data storage
+        this.wristAppData = null;
+        this.soundThemeData = null;
+        
         // Connection interface elements
         this.protocolSelect = document.getElementById('protocol-select');
         this.byteSleepInput = document.getElementById('byte-sleep');
@@ -155,6 +169,26 @@ class TimexDatalinkApp {
             console.log('Sync Local Calendar button clicked');
             this.handleSyncLocalCalendar();
         });
+        
+        // Advanced feature event listeners
+        if (this.writeAdvancedBtn) {
+            this.writeAdvancedBtn.addEventListener('click', () => this.handleWriteAdvanced());
+        }
+        if (this.readAdvancedBtn) {
+            this.readAdvancedBtn.addEventListener('click', () => this.handleReadAdvanced());
+        }
+        if (this.uploadWristAppBtn) {
+            this.uploadWristAppBtn.addEventListener('click', () => this.handleUploadWristApp());
+        }
+        if (this.uploadSoundThemeBtn) {
+            this.uploadSoundThemeBtn.addEventListener('click', () => this.handleUploadSoundTheme());
+        }
+        if (this.wristAppFile) {
+            this.wristAppFile.addEventListener('change', () => this.handleWristAppFileChange());
+        }
+        if (this.soundThemeFile) {
+            this.soundThemeFile.addEventListener('change', () => this.handleSoundThemeFileChange());
+        }
         
         // Tab switching
         this.initializeTabs();
@@ -1004,6 +1038,7 @@ class TimexDatalinkApp {
             
             // Update UI based on protocol capabilities
             this.updateUIForProtocol(selectedProtocol, protocolInfo);
+            this.updateAdvancedUIForProtocol(selectedProtocol, protocolInfo);
         } else {
             this.protocolCapabilitiesList.textContent = 'Unknown protocol';
             if (this.protocolFunctionsList) {
@@ -1049,6 +1084,45 @@ class TimexDatalinkApp {
         }
         
         this.logMessage(`Protocol ${protocol} selected: ${protocolInfo.name} - ${protocolInfo.status}`);
+    }
+    
+    updateAdvancedUIForProtocol(protocol, protocolInfo) {
+        // Hide all protocol-specific sections first
+        const protocol6SoundOptions = document.getElementById('protocol6-sound-options');
+        const protocol6PagerOptions = document.getElementById('protocol6-pager-options');
+        const protocol6NightMode = document.getElementById('protocol6-night-mode');
+        const protocol9Timers = document.getElementById('protocol9-timers');
+        const protocol7Games = document.getElementById('protocol7-games');
+        const protocol4WristApps = document.getElementById('protocol4-wrist-apps');
+        
+        // Hide all sections
+        [protocol6SoundOptions, protocol6PagerOptions, protocol6NightMode, 
+         protocol9Timers, protocol7Games, protocol4WristApps].forEach(element => {
+            if (element) element.style.display = 'none';
+        });
+        
+        // Show protocol-specific sections
+        if (protocol === 6) {
+            if (protocol6SoundOptions) protocol6SoundOptions.style.display = 'block';
+            if (protocol6PagerOptions) protocol6PagerOptions.style.display = 'block';
+            if (protocol6NightMode) protocol6NightMode.style.display = 'block';
+        } else if (protocol === 9) {
+            if (protocol9Timers) protocol9Timers.style.display = 'block';
+        } else if (protocol === 7) {
+            if (protocol7Games) protocol7Games.style.display = 'block';
+        } else if (protocol === 4) {
+            if (protocol4WristApps) protocol4WristApps.style.display = 'block';
+        }
+        
+        // Update advanced tab visibility
+        const advancedTab = document.querySelector('[data-tab="advanced"]');
+        const hasAdvancedFeatures = [3, 4, 6, 7, 9].includes(protocol);
+        
+        if (advancedTab) {
+            advancedTab.style.display = hasAdvancedFeatures ? '' : 'none';
+            advancedTab.style.opacity = hasAdvancedFeatures ? '1' : '0.5';
+            advancedTab.title = hasAdvancedFeatures ? '' : 'No advanced features for this protocol';
+        }
     }
     
     initializeTabs() {
@@ -1898,6 +1972,20 @@ class TimexDatalinkApp {
         // Local calendar sync controls
         this.updateLocalCalendarStatus();
         
+        // Advanced feature controls
+        if (this.writeAdvancedBtn) {
+            this.writeAdvancedBtn.disabled = !dataOperationsEnabled;
+        }
+        if (this.readAdvancedBtn) {
+            this.readAdvancedBtn.disabled = !dataOperationsEnabled;
+        }
+        if (this.uploadWristAppBtn) {
+            this.uploadWristAppBtn.disabled = !enabled || protocol !== 4;
+        }
+        if (this.uploadSoundThemeBtn) {
+            this.uploadSoundThemeBtn.disabled = !enabled || protocol !== 4;
+        }
+        
         // Clear button titles (all protocols are now fully implemented)
         this.readTimeBtn.title = '';
         this.syncTimeBtn.title = '';
@@ -1908,6 +1996,8 @@ class TimexDatalinkApp {
         this.readAllBtn.title = '';
         this.writeAllBtn.title = '';
         this.syncCalendarBtn.title = '';
+        if (this.writeAdvancedBtn) this.writeAdvancedBtn.title = '';
+        if (this.readAdvancedBtn) this.readAdvancedBtn.title = '';
         
         // Disable connection controls when connected
         this.protocolSelect.disabled = enabled;
@@ -2268,6 +2358,373 @@ class TimexDatalinkApp {
             }
         } catch (error) {
             return { success: false, error: error.message };
+        }
+    }
+
+    // Advanced Features Implementation
+    
+    /**
+     * Handle writing advanced settings (sound options, timers, games, etc.)
+     */
+    async handleWriteAdvanced() {
+        if (!this.client) return;
+        
+        try {
+            this.updateStatus('Writing advanced settings to device...');
+            this.logMessage('Writing advanced settings to watch...');
+            this.showProgress('Writing advanced settings...', 0);
+            
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
+            
+            this.updateProgress(25);
+            this.logMessage('Collecting advanced settings from UI...');
+            
+            // Collect advanced data based on protocol
+            const advancedData = this.collectAdvancedDataFromUI(protocol);
+            
+            if (Object.keys(advancedData).length === 0) {
+                throw new Error('No advanced settings configured. Please configure settings for this protocol.');
+            }
+            
+            this.logMessage(`Preparing advanced settings for ${protocolInfo.name}...`);
+            
+            this.updateProgress(50);
+            this.logMessage('Creating advanced settings sync workflow...');
+            
+            // Create sync workflow with advanced data
+            const syncData = {
+                start: {},
+                ...advancedData,
+                end: {}
+            };
+            
+            // Create and execute sync workflow
+            const workflow = this.client.createProtocolSyncWorkflow(syncData);
+            
+            // Replace client models with sync workflow
+            const originalModels = this.client.models;
+            this.client.models = workflow;
+            
+            try {
+                this.updateProgress(75);
+                this.logMessage('Sending advanced settings to watch...');
+                
+                const result = await this.client.write();
+                
+                if (result.success) {
+                    this.updateStatus('Advanced settings written successfully');
+                    this.logMessage(`Advanced settings sync completed: ${result.packetsWritten} packets sent`);
+                } else {
+                    throw new Error(result.message || 'Advanced settings write failed');
+                }
+                
+            } finally {
+                // Restore original models
+                this.client.models = originalModels;
+            }
+            
+            this.updateProgress(100);
+            this.hideProgress();
+            
+        } catch (error) {
+            console.error('Write advanced error:', error);
+            this.updateStatus(`Write advanced failed: ${error.message}`);
+            this.logMessage(`Write advanced error: ${error.message}`);
+            this.hideProgress();
+        }
+    }
+
+    /**
+     * Handle reading advanced settings (for bidirectional protocols)
+     */
+    async handleReadAdvanced() {
+        if (!this.client) return;
+        
+        try {
+            this.updateStatus('Reading advanced settings from device...');
+            this.logMessage('Reading advanced settings from watch...');
+            this.showProgress('Reading advanced settings...', 0);
+            
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
+            
+            // Most protocols are write-only
+            if (!protocolInfo.bidirectional) {
+                this.updateProgress(100);
+                this.updateStatus('Advanced read not supported - protocol is write-only');
+                this.logMessage(`Protocol ${protocol} (${protocolInfo.name}) is write-only. Cannot read advanced settings from device.`);
+                this.hideProgress();
+                return;
+            }
+            
+            // For bidirectional protocols, implement actual reading
+            this.updateProgress(50);
+            this.logMessage('Sending read advanced settings request...');
+            
+            const result = await this.client.sync({
+                writeData: true,
+                readData: true,
+                expectedReadBytes: 256, // Estimate for advanced settings
+                readTimeout: 5000
+            });
+            
+            this.updateProgress(75);
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                const advancedData = this.parseAdvancedResponse(result.readResult.data, protocol);
+                this.populateAdvancedUI(advancedData, protocol);
+                this.updateStatus('Advanced settings read successfully');
+                this.logMessage(`Advanced settings read from device`);
+            } else {
+                throw new Error('No valid advanced settings data received from device');
+            }
+            
+            this.updateProgress(100);
+            this.hideProgress();
+            
+        } catch (error) {
+            console.error('Read advanced error:', error);
+            this.updateStatus(`Read advanced failed: ${error.message}`);
+            this.logMessage(`Read advanced error: ${error.message}`);
+            this.hideProgress();
+        }
+    }
+
+    /**
+     * Handle wrist app file upload
+     */
+    async handleUploadWristApp() {
+        const file = this.wristAppFile.files[0];
+        if (!file) {
+            alert('Please select a .zap file first');
+            return;
+        }
+        
+        try {
+            this.updateStatus('Loading wrist app...');
+            this.logMessage(`Loading wrist app: ${file.name}`);
+            
+            const arrayBuffer = await file.arrayBuffer();
+            this.wristAppData = new Uint8Array(arrayBuffer);
+            
+            this.wristAppStatus.textContent = `${file.name} loaded (${this.wristAppData.length} bytes)`;
+            this.updateStatus('Wrist app loaded successfully');
+            this.logMessage(`Wrist app loaded: ${this.wristAppData.length} bytes`);
+            
+        } catch (error) {
+            console.error('Wrist app upload error:', error);
+            this.updateStatus(`Wrist app upload failed: ${error.message}`);
+            this.logMessage(`Wrist app upload error: ${error.message}`);
+        }
+    }
+
+    /**
+     * Handle sound theme file upload
+     */
+    async handleUploadSoundTheme() {
+        const file = this.soundThemeFile.files[0];
+        if (!file) {
+            alert('Please select a .spc file first');
+            return;
+        }
+        
+        try {
+            this.updateStatus('Loading sound theme...');
+            this.logMessage(`Loading sound theme: ${file.name}`);
+            
+            const arrayBuffer = await file.arrayBuffer();
+            this.soundThemeData = new Uint8Array(arrayBuffer);
+            
+            this.soundThemeStatus.textContent = `${file.name} loaded (${this.soundThemeData.length} bytes)`;
+            this.updateStatus('Sound theme loaded successfully');
+            this.logMessage(`Sound theme loaded: ${this.soundThemeData.length} bytes`);
+            
+        } catch (error) {
+            console.error('Sound theme upload error:', error);
+            this.updateStatus(`Sound theme upload failed: ${error.message}`);
+            this.logMessage(`Sound theme upload error: ${error.message}`);
+        }
+    }
+
+    /**
+     * Handle wrist app file change
+     */
+    handleWristAppFileChange() {
+        const file = this.wristAppFile.files[0];
+        this.uploadWristAppBtn.disabled = !file;
+        
+        if (file) {
+            this.wristAppStatus.textContent = `Ready to upload: ${file.name}`;
+        } else {
+            this.wristAppStatus.textContent = 'No wrist app loaded';
+            this.wristAppData = null;
+        }
+    }
+
+    /**
+     * Handle sound theme file change
+     */
+    handleSoundThemeFileChange() {
+        const file = this.soundThemeFile.files[0];
+        this.uploadSoundThemeBtn.disabled = !file;
+        
+        if (file) {
+            this.soundThemeStatus.textContent = `Ready to upload: ${file.name}`;
+        } else {
+            this.soundThemeStatus.textContent = 'No sound theme loaded';
+            this.soundThemeData = null;
+        }
+    }
+
+    /**
+     * Collect advanced data from UI based on protocol
+     */
+    collectAdvancedDataFromUI(protocol) {
+        const advancedData = {};
+        
+        // Sound options (all protocols that support it)
+        if ([3, 4, 6, 9].includes(protocol)) {
+            const hourlyChime = document.getElementById('hourly-chime')?.checked || false;
+            const buttonBeep = document.getElementById('button-beep')?.checked || false;
+            
+            if (protocol === 6) {
+                // Protocol 6 has extended sound options
+                const scrollSpeed = parseInt(document.getElementById('scroll-speed')?.value) || 2;
+                advancedData.soundScrollOptions = {
+                    hourlyChime,
+                    buttonBeep,
+                    scrollSpeed
+                };
+            } else {
+                advancedData.soundOptions = {
+                    hourlyChime,
+                    buttonBeep
+                };
+            }
+        }
+        
+        // Protocol 6 specific options
+        if (protocol === 6) {
+            // Pager options
+            const autoOnOff = document.getElementById('auto-on-off')?.checked || false;
+            if (autoOnOff) {
+                const onTime = document.getElementById('on-time')?.value || '08:00';
+                const offTime = document.getElementById('off-time')?.value || '22:00';
+                const alertSound = parseInt(document.getElementById('alert-sound')?.value) || 0;
+                
+                const [onHour, onMinute] = onTime.split(':').map(Number);
+                const [offHour, offMinute] = offTime.split(':').map(Number);
+                
+                advancedData.pagerOptions = {
+                    autoOnOff,
+                    onHour,
+                    onMinute,
+                    offHour,
+                    offMinute,
+                    alertSound
+                };
+            }
+            
+            // Night mode options
+            const nightModeNotification = document.getElementById('night-mode-notification')?.checked || false;
+            const nightModeHours = parseInt(document.getElementById('night-mode-hours')?.value) || 8;
+            const indigloTimeout = parseInt(document.getElementById('indiglo-timeout')?.value) || 4;
+            
+            advancedData.nightModeOptions = {
+                nightModeOnNotification: nightModeNotification,
+                nightModeDeactivateHours: nightModeHours,
+                indigloTimeoutSeconds: indigloTimeout
+            };
+        }
+        
+        // Protocol 9 timers
+        if (protocol === 9) {
+            const timers = [];
+            
+            for (let i = 1; i <= 2; i++) {
+                const timeInput = document.getElementById(`timer${i}-time`);
+                const labelInput = document.getElementById(`timer${i}-label`);
+                const actionSelect = document.getElementById(`timer${i}-action`);
+                
+                if (timeInput?.value) {
+                    const [hours, minutes, seconds = 0] = timeInput.value.split(':').map(Number);
+                    const timerTime = new Date(0, 0, 0, hours, minutes, seconds);
+                    
+                    timers.push({
+                        number: i,
+                        label: labelInput?.value || `Timer ${i}`,
+                        time: timerTime,
+                        actionAtEnd: actionSelect?.value || 'stop_timer'
+                    });
+                }
+            }
+            
+            if (timers.length > 0) {
+                advancedData.timers = timers;
+            }
+        }
+        
+        // Protocol 7 games
+        if (protocol === 7) {
+            const games = {
+                memoryGameEnabled: document.getElementById('memory-game')?.checked || false,
+                fortuneTellerEnabled: document.getElementById('fortune-teller')?.checked || false,
+                countdownTimerEnabled: document.getElementById('countdown-timer')?.checked || false,
+                countdownTimerSeconds: parseInt(document.getElementById('countdown-seconds')?.value) || 60,
+                mindReaderEnabled: document.getElementById('mind-reader')?.checked || false,
+                musicTimeKeeperEnabled: document.getElementById('music-timekeeper')?.checked || false,
+                morseCodePracticeEnabled: document.getElementById('morse-code')?.checked || false,
+                treasureHunterEnabled: document.getElementById('treasure-hunter')?.checked || false,
+                rhythmRhymeBusterEnabled: document.getElementById('rhythm-rhyme')?.checked || false,
+                stopWatchEnabled: document.getElementById('stopwatch')?.checked || false,
+                redLightGreenLightEnabled: document.getElementById('red-light-green')?.checked || false
+            };
+            
+            // Only add games if at least one is enabled
+            const hasEnabledGames = Object.values(games).some(value => value === true);
+            if (hasEnabledGames) {
+                advancedData.games = games;
+            }
+        }
+        
+        // Protocol 4 wrist apps and sound themes
+        if (protocol === 4) {
+            if (this.wristAppData) {
+                advancedData.wristAppData = this.wristAppData;
+            }
+            
+            if (this.soundThemeData) {
+                advancedData.soundThemeData = this.soundThemeData;
+            }
+        }
+        
+        return advancedData;
+    }
+
+    /**
+     * Parse advanced settings response from device
+     */
+    parseAdvancedResponse(data, protocol) {
+        // Simplified parsing - would need protocol-specific implementation
+        return {
+            soundOptions: {
+                hourlyChime: (data[0] || 0) > 0,
+                buttonBeep: (data[1] || 0) > 0
+            }
+        };
+    }
+
+    /**
+     * Populate advanced UI with data from device
+     */
+    populateAdvancedUI(advancedData, protocol) {
+        if (advancedData.soundOptions) {
+            const hourlyChime = document.getElementById('hourly-chime');
+            const buttonBeep = document.getElementById('button-beep');
+            
+            if (hourlyChime) hourlyChime.checked = advancedData.soundOptions.hourlyChime;
+            if (buttonBeep) buttonBeep.checked = advancedData.soundOptions.buttonBeep;
         }
     }
 }

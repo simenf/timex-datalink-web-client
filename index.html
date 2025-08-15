@@ -103,6 +103,7 @@
                                     <div class="tab" data-tab="alarms">Alarms</div>
                                     <div class="tab" data-tab="eeprom">EEPROM Data</div>
                                     <div class="tab" data-tab="calendar">Calendar</div>
+                                    <div class="tab" data-tab="advanced">Advanced</div>
                                     <div class="tab" data-tab="sync">Sync</div>
                                 </div>
                                 
@@ -345,6 +346,159 @@
                                                     </div>
                                                 </div>
                                             </fieldset>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Advanced Features Tab -->
+                                    <div id="advanced-tab" class="tab-panel hidden">
+                                        <div class="advanced-section">
+                                            <fieldset>
+                                                <legend>Sound Options</legend>
+                                                <div class="sound-options">
+                                                    <div class="form-row">
+                                                        <label>
+                                                            <input type="checkbox" id="hourly-chime"> Hourly Chime
+                                                        </label>
+                                                        <label>
+                                                            <input type="checkbox" id="button-beep"> Button Beep
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-row" id="protocol6-sound-options" style="display: none;">
+                                                        <label for="scroll-speed">Scroll Speed:</label>
+                                                        <select id="scroll-speed">
+                                                            <option value="1">Slow</option>
+                                                            <option value="2" selected>Normal</option>
+                                                            <option value="3">Fast</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset id="protocol6-pager-options" style="display: none;">
+                                                <legend>Pager Options (Protocol 6)</legend>
+                                                <div class="pager-options">
+                                                    <div class="form-row">
+                                                        <label>
+                                                            <input type="checkbox" id="auto-on-off"> Auto On/Off
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label for="on-time">On Time:</label>
+                                                        <input type="time" id="on-time" value="08:00">
+                                                        <label for="off-time">Off Time:</label>
+                                                        <input type="time" id="off-time" value="22:00">
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label for="alert-sound">Alert Sound:</label>
+                                                        <select id="alert-sound">
+                                                            <option value="0">Sound 1</option>
+                                                            <option value="1">Sound 2</option>
+                                                            <option value="2">Sound 3</option>
+                                                            <option value="6">Silent</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset id="protocol6-night-mode" style="display: none;">
+                                                <legend>Night Mode Options (Protocol 6)</legend>
+                                                <div class="night-mode-options">
+                                                    <div class="form-row">
+                                                        <label>
+                                                            <input type="checkbox" id="night-mode-notification"> Night Mode on Notification
+                                                        </label>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label for="night-mode-hours">Deactivate After (hours):</label>
+                                                        <input type="number" id="night-mode-hours" value="8" min="1" max="24">
+                                                        <label for="indiglo-timeout">Indiglo Timeout (seconds):</label>
+                                                        <input type="number" id="indiglo-timeout" value="4" min="1" max="10">
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset id="protocol9-timers" style="display: none;">
+                                                <legend>Timers (Protocol 9)</legend>
+                                                <div class="timer-list">
+                                                    <div class="timer-item">
+                                                        <div class="form-row">
+                                                            <label>Timer 1:</label>
+                                                            <input type="time" id="timer1-time" value="00:30" step="1">
+                                                            <input type="text" id="timer1-label" placeholder="Label" maxlength="8" value="Workout">
+                                                            <select id="timer1-action">
+                                                                <option value="stop_timer">Stop Timer</option>
+                                                                <option value="repeat_timer" selected>Repeat Timer</option>
+                                                                <option value="start_chrono">Start Chrono</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="timer-item">
+                                                        <div class="form-row">
+                                                            <label>Timer 2:</label>
+                                                            <input type="time" id="timer2-time" value="01:00" step="1">
+                                                            <input type="text" id="timer2-label" placeholder="Label" maxlength="8" value="Break">
+                                                            <select id="timer2-action">
+                                                                <option value="stop_timer">Stop Timer</option>
+                                                                <option value="repeat_timer" selected>Repeat Timer</option>
+                                                                <option value="start_chrono">Start Chrono</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset id="protocol7-games" style="display: none;">
+                                                <legend>Games & Activities (Protocol 7)</legend>
+                                                <div class="games-options">
+                                                    <div class="form-row">
+                                                        <label><input type="checkbox" id="memory-game"> Memory Game</label>
+                                                        <label><input type="checkbox" id="fortune-teller"> Fortune Teller</label>
+                                                        <label><input type="checkbox" id="mind-reader"> Mind Reader</label>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label><input type="checkbox" id="countdown-timer"> Countdown Timer</label>
+                                                        <label for="countdown-seconds">Seconds:</label>
+                                                        <input type="number" id="countdown-seconds" value="60" min="1" max="3600">
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label><input type="checkbox" id="music-timekeeper"> Music Time Keeper</label>
+                                                        <label><input type="checkbox" id="morse-code"> Morse Code Practice</label>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label><input type="checkbox" id="treasure-hunter"> Treasure Hunter</label>
+                                                        <label><input type="checkbox" id="rhythm-rhyme"> Rhythm Rhyme Buster</label>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label><input type="checkbox" id="stopwatch"> Stopwatch</label>
+                                                        <label><input type="checkbox" id="red-light-green"> Red Light Green Light</label>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <fieldset id="protocol4-wrist-apps" style="display: none;">
+                                                <legend>Wrist Apps & Sound Themes (Protocol 4)</legend>
+                                                <div class="wrist-app-section">
+                                                    <div class="form-row">
+                                                        <label for="wrist-app-file">Wrist App (.zap file):</label>
+                                                        <input type="file" id="wrist-app-file" accept=".zap">
+                                                        <button id="upload-wrist-app-btn" class="btn small" disabled>Upload App</button>
+                                                    </div>
+                                                    <div class="form-row">
+                                                        <label for="sound-theme-file">Sound Theme (.spc file):</label>
+                                                        <input type="file" id="sound-theme-file" accept=".spc">
+                                                        <button id="upload-sound-theme-btn" class="btn small" disabled>Upload Theme</button>
+                                                    </div>
+                                                    <div class="upload-status">
+                                                        <div id="wrist-app-status">No wrist app loaded</div>
+                                                        <div id="sound-theme-status">No sound theme loaded</div>
+                                                    </div>
+                                                </div>
+                                            </fieldset>
+                                            
+                                            <div class="form-actions">
+                                                <button id="write-advanced-btn" class="btn" disabled>Write Advanced Settings</button>
+                                                <button id="read-advanced-btn" class="btn" disabled>Read Advanced Settings</button>
+                                            </div>
                                         </div>
                                     </div>
                                     
