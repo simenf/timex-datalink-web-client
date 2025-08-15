@@ -134,11 +134,15 @@ export class LocalCalendar {
     
     // Convert events to watch-compatible appointments
     convertEventsToAppointments(events, maxEvents = 10) {
-        return events.slice(0, maxEvents).map(event => {
+        return events.slice(0, maxEvents).filter(event => {
+            // Filter out events without valid dates
+            const appointmentTime = event.startTime || event.date;
+            return appointmentTime && appointmentTime instanceof Date && !isNaN(appointmentTime.getTime());
+        }).map(event => {
             let message = event.title;
             
             // Truncate title to fit watch display (8 characters for Protocol 3)
-            if (message.length > 8) {
+            if (message && message.length > 8) {
                 message = message.substring(0, 8);
             }
             
@@ -147,9 +151,13 @@ export class LocalCalendar {
             
             return {
                 id: event.id,
-                message: message,
+                message: message || 'Event',
                 time: appointmentTime,
-                originalTitle: event.title,
+                date: appointmentTime, // Also provide as 'date' for compatibility
+                title: message || 'Event',
+                originalTitle: event.title || 'Event',
+                description: event.description || '',
+                isAllDay: event.allDay || false,
                 originalEvent: event,
                 timeFormatted: this.formatTimeForDisplay(appointmentTime, event.allDay)
             };

@@ -110,6 +110,13 @@ class TimexDatalinkApp {
         
         // Bind event listeners
         this.connectBtn.addEventListener('click', () => this.handleConnect());
+        
+        // Add debug button to check available ports
+        const debugBtn = document.createElement('button');
+        debugBtn.textContent = 'Debug: Check Available Ports';
+        debugBtn.className = 'btn';
+        debugBtn.addEventListener('click', () => this.debugSerialPorts());
+        this.connectBtn.parentNode.appendChild(debugBtn);
         this.testConnectionBtn.addEventListener('click', () => this.handleTestConnection());
         this.protocolSelect.addEventListener('change', () => this.handleProtocolChange());
         
@@ -696,6 +703,19 @@ class TimexDatalinkApp {
             
             // Get appointments from local calendar
             const appointments = this.localCalendarUI.getAppointmentsForSync();
+            console.log('📅 LOCAL CALENDAR DEBUG: Raw appointments from UI:', appointments);
+            appointments.forEach((apt, i) => {
+                console.log(`📅 Appointment ${i + 1} details:`, {
+                    title: apt.title,
+                    originalTitle: apt.originalTitle,
+                    date: apt.date,
+                    dateType: typeof apt.date,
+                    dateValue: apt.date,
+                    description: apt.description,
+                    isAllDay: apt.isAllDay,
+                    fullObject: apt
+                });
+            });
             
             if (appointments.length === 0) {
                 alert('No upcoming events found in local calendar');
@@ -764,6 +784,34 @@ class TimexDatalinkApp {
         this.syncLocalCalendarBtn.disabled = !this.isConnected || upcomingEvents.length === 0;
     }
     
+    async debugSerialPorts() {
+        try {
+            this.logMessage('Checking Web Serial API support...');
+            
+            if (!('serial' in navigator)) {
+                this.logMessage('❌ Web Serial API not supported in this browser');
+                return;
+            }
+            
+            this.logMessage('✅ Web Serial API is supported');
+            
+            // Check for previously authorized ports
+            const existingPorts = await navigator.serial.getPorts();
+            this.logMessage(`Found ${existingPorts.length} previously authorized ports:`);
+            
+            existingPorts.forEach((port, index) => {
+                const info = port.getInfo();
+                this.logMessage(`  Port ${index + 1}: VendorID=0x${info.usbVendorId?.toString(16) || 'unknown'}, ProductID=0x${info.usbProductId?.toString(16) || 'unknown'}`);
+            });
+            
+            // Try to request a new port
+            this.logMessage('Attempting to request new port (this will show the device picker)...');
+            
+        } catch (error) {
+            this.logMessage(`❌ Debug error: ${error.message}`);
+        }
+    }
+
     async handleConnect() {
         try {
             if (!this.isConnected) {
@@ -784,15 +832,13 @@ class TimexDatalinkApp {
                 
                 this.logMessage(`Requesting serial port access...`);
                 
-                // Request serial port with filters for common USB-Serial devices
-                const port = await navigator.serial.requestPort({
-                    filters: [
-                        { usbVendorId: 0x067B }, // Prolific
-                        { usbVendorId: 0x10C4 }, // Silicon Labs
-                        { usbVendorId: 0x0403 }, // FTDI
-                        { usbVendorId: 0x1A86 }, // QinHeng Electronics
-                    ]
-                });
+                // Check if we're in a secure context
+                if (!window.isSecureContext) {
+                    throw new Error('Web Serial API requires a secure context (HTTPS or localhost)');
+                }
+                
+                // Request serial port - show all available serial devices
+                const port = await navigator.serial.requestPort();
                 
                 this.currentPort = port;
                 this.logMessage(`Port selected: ${port.getInfo ? JSON.stringify(port.getInfo()) : 'Unknown device'}`);
@@ -810,7 +856,7 @@ class TimexDatalinkApp {
                 
                 // Create client with protocol selection
                 this.client = new TimexDatalinkClient({
-                    serialAdapter: this.serialAdapter,
+                    serialDevice: this.serialAdapter,
                     models: [],
                     verbose: verbose,
                     protocol: protocol,
@@ -1045,16 +1091,60 @@ class TimexDatalinkApp {
             this.logMessage('Reading current time from watch...');
             this.showProgress('Reading time...', 0);
             
-            // Simulate reading time - actual implementation will be added in later tasks
-            this.updateProgress(50);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            const currentTime = new Date().toLocaleString();
-            this.displayTime.textContent = currentTime;
+            if (!protocolInfo.features.includes('Time')) {
+                throw new Error(`Protocol ${protocol} does not support time reading`);
+            }
+            
+            // Note: Most Timex Datalink protocols are write-only, not bidirectional
+            // This is a limitation of the original hardware design
+            if (!protocolInfo.bidirectional) {
+                this.updateProgress(100);
+                this.updateStatus('Time read not supported - protocol is write-only');
+                this.logMessage(`Protocol ${protocol} (${protocolInfo.name}) is write-only. Cannot read time from device.`);
+                this.logMessage('Tip: Use "Sync Time" to write current time to the watch instead.');
+                this.displayTime.textContent = 'Read not supported (write-only protocol)';
+                this.hideProgress();
+                return;
+            }
+            
+            // For bidirectional protocols (like Protocol 4), implement actual reading
+            this.updateProgress(25);
+            this.logMessage('Sending read time request...');
+            
+            // Create a minimal read workflow using protocol manager
+            const readWorkflow = this.client.createProtocolSyncWorkflow({
+                start: {},
+                end: {}
+            });
+            
+            this.updateProgress(50);
+            
+            // Execute read operation
+            const result = await this.client.sync({
+                writeData: true,  // Send read request
+                readData: true,   // Read response
+                expectedReadBytes: 16, // Typical time response size
+                readTimeout: 3000
+            });
+            
+            this.updateProgress(75);
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                // Parse time data (implementation would depend on protocol specifics)
+                const timeData = this.parseTimeResponse(result.readResult.data, protocol);
+                this.displayTime.textContent = timeData.formatted;
+                this.updateStatus('Time read successfully');
+                this.logMessage(`Time read from device: ${timeData.formatted}`);
+            } else {
+                throw new Error('No valid time data received from device');
+            }
+            
             this.updateProgress(100);
-            this.updateStatus('Time read successfully');
-            this.logMessage(`Time read: ${currentTime}`);
             this.hideProgress();
+            
         } catch (error) {
             console.error('Read time error:', error);
             this.updateStatus(`Read time failed: ${error.message}`);
@@ -1073,20 +1163,85 @@ class TimexDatalinkApp {
             
             const timeValue = this.currentTimeInput.value;
             const timeZone = parseInt(this.timeZoneSelect.value);
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
+            
+            if (!timeValue) {
+                throw new Error('Please set a time value first');
+            }
+            
+            if (!protocolInfo.features.includes('Time')) {
+                throw new Error(`Protocol ${protocol} does not support time setting`);
+            }
             
             this.logMessage(`Setting time to: ${timeValue} (UTC${timeZone >= 0 ? '+' : ''}${timeZone})`);
             
-            // Simulate time sync - actual implementation will be added in later tasks
-            this.updateProgress(30);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            this.updateProgress(70);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            this.updateProgress(100);
+            const targetTime = new Date(timeValue);
             
-            this.updateStatus('Time synced successfully');
-            this.logMessage('Time sync completed successfully');
-            this.displayTime.textContent = new Date(timeValue).toLocaleString();
+            // Adjust for timezone offset
+            const adjustedTime = new Date(targetTime.getTime() + (timeZone * 60 * 60 * 1000));
+            
+            this.updateProgress(25);
+            this.logMessage('Creating time sync workflow...');
+            
+            // Create sync workflow with time data
+            const syncData = {
+                start: {},
+                time: {
+                    zone: 1, // Primary time zone
+                    is24h: true, // Default to 24h format
+                    time: adjustedTime
+                }
+            };
+            
+            // Add protocol-specific time data
+            if (protocol === 3 || protocol === 4) {
+                syncData.time.dateFormat = "%_m-%d-%y"; // MM-DD-YY format
+                syncData.time.name = `tz${timeZone >= 0 ? '+' : ''}${timeZone}`;
+            }
+            
+            if (protocol === 1 || protocol === 9) {
+                // Protocol 1 and 9 support time names
+                syncData.timeName = {
+                    zone: 1,
+                    name: `UTC${timeZone >= 0 ? '+' : ''}${timeZone}`.substring(0, 3)
+                };
+            }
+            
+            // Always add end packet
+            syncData.end = {};
+            
+            this.updateProgress(50);
+            this.logMessage('Sending time data to watch...');
+            
+            // Create and execute sync workflow
+            const workflow = this.client.createProtocolSyncWorkflow(syncData);
+            
+            // Replace client models with sync workflow
+            const originalModels = this.client.models;
+            this.client.models = workflow;
+            
+            try {
+                const result = await this.client.write();
+                
+                this.updateProgress(85);
+                
+                if (result.success) {
+                    this.updateStatus('Time synced successfully');
+                    this.logMessage(`Time sync completed: ${result.packetsWritten} packets sent`);
+                    this.displayTime.textContent = adjustedTime.toLocaleString();
+                } else {
+                    throw new Error(result.message || 'Time sync failed');
+                }
+                
+            } finally {
+                // Restore original models
+                this.client.models = originalModels;
+            }
+            
+            this.updateProgress(100);
             this.hideProgress();
+            
         } catch (error) {
             console.error('Sync time error:', error);
             this.updateStatus(`Sync time failed: ${error.message}`);
@@ -1103,14 +1258,50 @@ class TimexDatalinkApp {
             this.logMessage('Reading alarm settings from watch...');
             this.showProgress('Reading alarms...', 0);
             
-            // Simulate reading alarms
-            this.updateProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 800));
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            this.displayAlarms.textContent = '3 alarms configured';
-            this.updateStatus('Alarms read successfully');
-            this.logMessage('Alarms read successfully');
+            if (!protocolInfo.features.includes('Alarms')) {
+                throw new Error(`Protocol ${protocol} does not support alarms`);
+            }
+            
+            // Most protocols are write-only
+            if (!protocolInfo.bidirectional) {
+                this.updateProgress(100);
+                this.updateStatus('Alarm read not supported - protocol is write-only');
+                this.logMessage(`Protocol ${protocol} (${protocolInfo.name}) is write-only. Cannot read alarms from device.`);
+                this.logMessage('Tip: Use "Write Alarms" to send alarm settings to the watch instead.');
+                this.displayAlarms.textContent = 'Read not supported (write-only protocol)';
+                this.hideProgress();
+                return;
+            }
+            
+            // For bidirectional protocols, implement actual reading
+            this.updateProgress(50);
+            this.logMessage('Sending read alarms request...');
+            
+            const result = await this.client.sync({
+                writeData: true,
+                readData: true,
+                expectedReadBytes: protocolInfo.maxAlarms * 16, // Estimate based on alarm count
+                readTimeout: 3000
+            });
+            
+            this.updateProgress(75);
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                const alarmData = this.parseAlarmResponse(result.readResult.data, protocol);
+                this.displayAlarms.textContent = `${alarmData.count} alarms configured`;
+                this.populateAlarmUI(alarmData.alarms);
+                this.updateStatus('Alarms read successfully');
+                this.logMessage(`Read ${alarmData.count} alarms from device`);
+            } else {
+                throw new Error('No valid alarm data received from device');
+            }
+            
+            this.updateProgress(100);
             this.hideProgress();
+            
         } catch (error) {
             console.error('Read alarms error:', error);
             this.updateStatus(`Read alarms failed: ${error.message}`);
@@ -1127,13 +1318,65 @@ class TimexDatalinkApp {
             this.logMessage('Writing alarm settings to watch...');
             this.showProgress('Writing alarms...', 0);
             
-            // Simulate writing alarms
-            this.updateProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            this.updateStatus('Alarms written successfully');
-            this.logMessage('Alarms written successfully');
+            if (!protocolInfo.features.includes('Alarms')) {
+                throw new Error(`Protocol ${protocol} does not support alarms`);
+            }
+            
+            this.updateProgress(25);
+            this.logMessage('Collecting alarm data from UI...');
+            
+            // Collect alarm data from UI
+            const alarms = this.collectAlarmDataFromUI();
+            
+            if (alarms.length === 0) {
+                throw new Error('No alarms configured. Please set at least one alarm.');
+            }
+            
+            this.logMessage(`Preparing ${alarms.length} alarms for sync...`);
+            
+            this.updateProgress(50);
+            this.logMessage('Creating alarm sync workflow...');
+            
+            // Create sync workflow with alarm data
+            // Protocol factory expects 'alarms' (plural) not 'alarm'
+            const syncData = {
+                start: {},
+                alarms: alarms, // Protocol factory expects 'alarms' array
+                end: {}
+            };
+            
+            // Create and execute sync workflow
+            const workflow = this.client.createProtocolSyncWorkflow(syncData);
+            
+            // Replace client models with sync workflow
+            const originalModels = this.client.models;
+            this.client.models = workflow;
+            
+            try {
+                this.updateProgress(75);
+                this.logMessage('Sending alarm data to watch...');
+                
+                const result = await this.client.write();
+                
+                if (result.success) {
+                    this.updateStatus('Alarms written successfully');
+                    this.logMessage(`Alarm sync completed: ${result.packetsWritten} packets sent`);
+                    this.displayAlarms.textContent = `${alarms.length} alarms configured`;
+                } else {
+                    throw new Error(result.message || 'Alarm write failed');
+                }
+                
+            } finally {
+                // Restore original models
+                this.client.models = originalModels;
+            }
+            
+            this.updateProgress(100);
             this.hideProgress();
+            
         } catch (error) {
             console.error('Write alarms error:', error);
             this.updateStatus(`Write alarms failed: ${error.message}`);
@@ -1150,14 +1393,50 @@ class TimexDatalinkApp {
             this.logMessage('Reading EEPROM data from watch...');
             this.showProgress('Reading EEPROM...', 0);
             
-            // Simulate reading EEPROM
-            this.updateProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 1200));
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            this.displayEeprom.textContent = 'Phone numbers and appointments loaded';
-            this.updateStatus('EEPROM data read successfully');
-            this.logMessage('EEPROM data read successfully');
+            if (!protocolInfo.features.includes('EEPROM Data')) {
+                throw new Error(`Protocol ${protocol} does not support EEPROM data`);
+            }
+            
+            // Most protocols are write-only
+            if (!protocolInfo.bidirectional) {
+                this.updateProgress(100);
+                this.updateStatus('EEPROM read not supported - protocol is write-only');
+                this.logMessage(`Protocol ${protocol} (${protocolInfo.name}) is write-only. Cannot read EEPROM from device.`);
+                this.logMessage('Tip: Use "Write EEPROM" to send phone numbers and appointments to the watch instead.');
+                this.displayEeprom.textContent = 'Read not supported (write-only protocol)';
+                this.hideProgress();
+                return;
+            }
+            
+            // For bidirectional protocols, implement actual reading
+            this.updateProgress(50);
+            this.logMessage('Sending read EEPROM request...');
+            
+            const result = await this.client.sync({
+                writeData: true,
+                readData: true,
+                expectedReadBytes: 512, // Typical EEPROM size
+                readTimeout: 5000
+            });
+            
+            this.updateProgress(75);
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                const eepromData = this.parseEepromResponse(result.readResult.data, protocol);
+                this.displayEeprom.textContent = `${eepromData.phoneNumbers.length} phone numbers, ${eepromData.appointments.length} appointments loaded`;
+                this.populateEepromUI(eepromData);
+                this.updateStatus('EEPROM data read successfully');
+                this.logMessage(`Read EEPROM: ${eepromData.phoneNumbers.length} phone numbers, ${eepromData.appointments.length} appointments`);
+            } else {
+                throw new Error('No valid EEPROM data received from device');
+            }
+            
+            this.updateProgress(100);
             this.hideProgress();
+            
         } catch (error) {
             console.error('Read EEPROM error:', error);
             this.updateStatus(`Read EEPROM failed: ${error.message}`);
@@ -1174,13 +1453,65 @@ class TimexDatalinkApp {
             this.logMessage('Writing EEPROM data to watch...');
             this.showProgress('Writing EEPROM...', 0);
             
-            // Simulate writing EEPROM
-            this.updateProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            this.updateStatus('EEPROM data written successfully');
-            this.logMessage('EEPROM data written successfully');
+            if (!protocolInfo.features.includes('EEPROM Data')) {
+                throw new Error(`Protocol ${protocol} does not support EEPROM data`);
+            }
+            
+            this.updateProgress(25);
+            this.logMessage('Collecting EEPROM data from UI...');
+            
+            // Collect EEPROM data from UI
+            const eepromData = this.collectEepromDataFromUI();
+            
+            if (eepromData.phoneNumbers.length === 0 && eepromData.appointments.length === 0) {
+                throw new Error('No EEPROM data configured. Please add phone numbers or appointments.');
+            }
+            
+            this.logMessage(`Preparing ${eepromData.phoneNumbers.length} phone numbers and ${eepromData.appointments.length} appointments for sync...`);
+            
+            this.updateProgress(50);
+            this.logMessage('Creating EEPROM sync workflow...');
+            
+            // Create sync workflow with EEPROM data
+            // Note: Protocol factory expects lowercase keys that match component names
+            const syncData = {
+                start: {},
+                eeprom: eepromData, // This should work if eeprom components exist
+                end: {}
+            };
+            
+            // Create and execute sync workflow
+            const workflow = this.client.createProtocolSyncWorkflow(syncData);
+            
+            // Replace client models with sync workflow
+            const originalModels = this.client.models;
+            this.client.models = workflow;
+            
+            try {
+                this.updateProgress(75);
+                this.logMessage('Sending EEPROM data to watch...');
+                
+                const result = await this.client.write();
+                
+                if (result.success) {
+                    this.updateStatus('EEPROM data written successfully');
+                    this.logMessage(`EEPROM sync completed: ${result.packetsWritten} packets sent`);
+                    this.displayEeprom.textContent = `${eepromData.phoneNumbers.length} phone numbers, ${eepromData.appointments.length} appointments written`;
+                } else {
+                    throw new Error(result.message || 'EEPROM write failed');
+                }
+                
+            } finally {
+                // Restore original models
+                this.client.models = originalModels;
+            }
+            
+            this.updateProgress(100);
             this.hideProgress();
+            
         } catch (error) {
             console.error('Write EEPROM error:', error);
             this.updateStatus(`Write EEPROM failed: ${error.message}`);
@@ -1197,30 +1528,118 @@ class TimexDatalinkApp {
             this.logMessage('Reading all data from watch...');
             this.showProgress('Reading all data...', 0);
             
-            // Simulate reading all data
-            this.updateProgress(25);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            this.logMessage('Reading time...');
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            this.updateProgress(50);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            this.logMessage('Reading alarms...');
+            // Check if protocol supports reading
+            if (!protocolInfo.bidirectional) {
+                this.updateProgress(100);
+                this.updateStatus('Read all not supported - protocol is write-only');
+                this.logMessage(`Protocol ${protocol} (${protocolInfo.name}) is write-only. Cannot read data from device.`);
+                this.logMessage('Tip: Use individual "Write" functions to send data to the watch instead.');
+                this.displayTime.textContent = 'Read not supported (write-only protocol)';
+                this.displayAlarms.textContent = 'Read not supported (write-only protocol)';
+                this.displayEeprom.textContent = 'Read not supported (write-only protocol)';
+                this.hideProgress();
+                return;
+            }
             
-            this.updateProgress(75);
-            await new Promise(resolve => setTimeout(resolve, 500));
-            this.logMessage('Reading EEPROM data...');
+            let successCount = 0;
+            let totalOperations = 0;
+            
+            // Count available operations
+            if (protocolInfo.features.includes('Time')) totalOperations++;
+            if (protocolInfo.features.includes('Alarms')) totalOperations++;
+            if (protocolInfo.features.includes('EEPROM Data')) totalOperations++;
+            
+            if (totalOperations === 0) {
+                throw new Error('No readable features available for this protocol');
+            }
+            
+            let currentOperation = 0;
+            
+            // Read time if supported
+            if (protocolInfo.features.includes('Time')) {
+                try {
+                    this.updateProgress((currentOperation / totalOperations) * 100);
+                    this.logMessage('Reading time...');
+                    
+                    const timeResult = await this.readTimeData();
+                    if (timeResult.success) {
+                        this.displayTime.textContent = timeResult.data.formatted;
+                        successCount++;
+                        this.logMessage('✓ Time read successfully');
+                    } else {
+                        this.logMessage('✗ Time read failed: ' + timeResult.error);
+                        this.displayTime.textContent = 'Read failed';
+                    }
+                } catch (error) {
+                    this.logMessage('✗ Time read error: ' + error.message);
+                    this.displayTime.textContent = 'Read error';
+                }
+                currentOperation++;
+            }
+            
+            // Read alarms if supported
+            if (protocolInfo.features.includes('Alarms')) {
+                try {
+                    this.updateProgress((currentOperation / totalOperations) * 100);
+                    this.logMessage('Reading alarms...');
+                    
+                    const alarmResult = await this.readAlarmData();
+                    if (alarmResult.success) {
+                        this.displayAlarms.textContent = `${alarmResult.data.count} alarms configured`;
+                        this.populateAlarmUI(alarmResult.data.alarms);
+                        successCount++;
+                        this.logMessage('✓ Alarms read successfully');
+                    } else {
+                        this.logMessage('✗ Alarms read failed: ' + alarmResult.error);
+                        this.displayAlarms.textContent = 'Read failed';
+                    }
+                } catch (error) {
+                    this.logMessage('✗ Alarms read error: ' + error.message);
+                    this.displayAlarms.textContent = 'Read error';
+                }
+                currentOperation++;
+            }
+            
+            // Read EEPROM if supported
+            if (protocolInfo.features.includes('EEPROM Data')) {
+                try {
+                    this.updateProgress((currentOperation / totalOperations) * 100);
+                    this.logMessage('Reading EEPROM data...');
+                    
+                    const eepromResult = await this.readEepromData();
+                    if (eepromResult.success) {
+                        this.displayEeprom.textContent = `${eepromResult.data.phoneNumbers.length} phone numbers, ${eepromResult.data.appointments.length} appointments loaded`;
+                        this.populateEepromUI(eepromResult.data);
+                        successCount++;
+                        this.logMessage('✓ EEPROM read successfully');
+                    } else {
+                        this.logMessage('✗ EEPROM read failed: ' + eepromResult.error);
+                        this.displayEeprom.textContent = 'Read failed';
+                    }
+                } catch (error) {
+                    this.logMessage('✗ EEPROM read error: ' + error.message);
+                    this.displayEeprom.textContent = 'Read error';
+                }
+                currentOperation++;
+            }
             
             this.updateProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 500));
             
-            // Update displays
-            this.displayTime.textContent = new Date().toLocaleString();
-            this.displayAlarms.textContent = '3 alarms configured';
-            this.displayEeprom.textContent = 'Phone numbers and appointments loaded';
+            if (successCount === totalOperations) {
+                this.updateStatus('All data read successfully');
+                this.logMessage(`✓ All data read successfully (${successCount}/${totalOperations} operations)`);
+            } else if (successCount > 0) {
+                this.updateStatus(`Partial read completed (${successCount}/${totalOperations} successful)`);
+                this.logMessage(`⚠ Partial read completed: ${successCount}/${totalOperations} operations successful`);
+            } else {
+                throw new Error('All read operations failed');
+            }
             
-            this.updateStatus('All data read successfully');
-            this.logMessage('All data read successfully');
             this.hideProgress();
+            
         } catch (error) {
             console.error('Read all error:', error);
             this.updateStatus(`Read all failed: ${error.message}`);
@@ -1237,25 +1656,139 @@ class TimexDatalinkApp {
             this.logMessage('Writing all data to watch...');
             this.showProgress('Writing all data...', 0);
             
-            // Simulate writing all data
-            this.updateProgress(25);
-            await new Promise(resolve => setTimeout(resolve, 600));
-            this.logMessage('Writing time...');
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
             
-            this.updateProgress(50);
-            await new Promise(resolve => setTimeout(resolve, 600));
-            this.logMessage('Writing alarms...');
+            let successCount = 0;
+            let totalOperations = 0;
+            
+            // Count available operations
+            if (protocolInfo.features.includes('Time')) totalOperations++;
+            if (protocolInfo.features.includes('Alarms')) totalOperations++;
+            if (protocolInfo.features.includes('EEPROM Data')) totalOperations++;
+            
+            if (totalOperations === 0) {
+                throw new Error('No writable features available for this protocol');
+            }
+            
+            // Collect all data first
+            const timeValue = this.currentTimeInput.value;
+            const timeZone = parseInt(this.timeZoneSelect.value);
+            const alarms = this.collectAlarmDataFromUI();
+            const eepromData = this.collectEepromDataFromUI();
+            
+            // Build comprehensive sync data
+            const syncData = {
+                start: {}
+            };
+            
+            let currentOperation = 0;
+            
+            // Add time data if supported and configured
+            if (protocolInfo.features.includes('Time') && timeValue) {
+                this.updateProgress((currentOperation / totalOperations) * 100);
+                this.logMessage('Preparing time data...');
+                
+                const targetTime = new Date(timeValue);
+                const adjustedTime = new Date(targetTime.getTime() + (timeZone * 60 * 60 * 1000));
+                
+                syncData.time = {
+                    zone: 1,
+                    is24h: true,
+                    time: adjustedTime
+                };
+                
+                // Add protocol-specific time data
+                if (protocol === 3 || protocol === 4) {
+                    syncData.time.dateFormat = "%_m-%d-%y";
+                    syncData.time.name = `tz${timeZone >= 0 ? '+' : ''}${timeZone}`;
+                }
+                
+                if (protocol === 1 || protocol === 9) {
+                    // Protocol 1 and 9 support separate time name packets
+                    syncData.timeName = {
+                        zone: 1,
+                        name: `UTC${timeZone >= 0 ? '+' : ''}${timeZone}`.substring(0, 3)
+                    };
+                }
+                
+                currentOperation++;
+                this.logMessage('✓ Time data prepared');
+            }
+            
+            // Add alarm data if supported and configured
+            if (protocolInfo.features.includes('Alarms') && alarms.length > 0) {
+                this.updateProgress((currentOperation / totalOperations) * 100);
+                this.logMessage(`Preparing ${alarms.length} alarms...`);
+                
+                syncData.alarms = alarms; // Use 'alarms' (plural) to match protocol factory
+                currentOperation++;
+                this.logMessage('✓ Alarm data prepared');
+            }
+            
+            // Add EEPROM data if supported and configured
+            if (protocolInfo.features.includes('EEPROM Data') && 
+                (eepromData.phoneNumbers.length > 0 || eepromData.appointments.length > 0)) {
+                this.updateProgress((currentOperation / totalOperations) * 100);
+                this.logMessage(`Preparing EEPROM data (${eepromData.phoneNumbers.length} phone numbers, ${eepromData.appointments.length} appointments)...`);
+                
+                syncData.eeprom = eepromData;
+                currentOperation++;
+                this.logMessage('✓ EEPROM data prepared');
+            }
+            
+            // Always add end packet
+            syncData.end = {};
+            
+            // Check if we have any data to sync
+            const hasData = Object.keys(syncData).length > 2; // More than just start and end
+            if (!hasData) {
+                throw new Error('No data configured to write. Please set time, alarms, or EEPROM data first.');
+            }
             
             this.updateProgress(75);
-            await new Promise(resolve => setTimeout(resolve, 600));
-            this.logMessage('Writing EEPROM data...');
+            this.logMessage('Creating comprehensive sync workflow...');
+            
+            // Create and execute sync workflow
+            const workflow = this.client.createProtocolSyncWorkflow(syncData);
+            
+            // Replace client models with sync workflow
+            const originalModels = this.client.models;
+            this.client.models = workflow;
+            
+            try {
+                this.updateProgress(85);
+                this.logMessage('Sending all data to watch...');
+                
+                const result = await this.client.write();
+                
+                if (result.success) {
+                    this.updateStatus('All data written successfully');
+                    this.logMessage(`✓ Complete sync finished: ${result.packetsWritten} packets sent`);
+                    
+                    // Update displays
+                    if (syncData.time) {
+                        this.displayTime.textContent = syncData.time.time.toLocaleString();
+                    }
+                    if (syncData.alarms) {
+                        this.displayAlarms.textContent = `${syncData.alarms.length} alarms configured`;
+                    }
+                    if (syncData.eeprom) {
+                        this.displayEeprom.textContent = `${syncData.eeprom.phoneNumbers.length} phone numbers, ${syncData.eeprom.appointments.length} appointments written`;
+                    }
+                    
+                } else {
+                    throw new Error(result.message || 'Write all failed');
+                }
+                
+            } finally {
+                // Restore original models
+                this.client.models = originalModels;
+            }
             
             this.updateProgress(100);
-            await new Promise(resolve => setTimeout(resolve, 600));
-            
-            this.updateStatus('All data written successfully');
-            this.logMessage('All data written successfully');
             this.hideProgress();
+            
         } catch (error) {
             console.error('Write all error:', error);
             this.updateStatus(`Write all failed: ${error.message}`);
@@ -1381,6 +1914,361 @@ class TimexDatalinkApp {
         this.byteSleepInput.disabled = enabled;
         this.packetSleepInput.disabled = enabled;
         this.verboseModeCheckbox.disabled = enabled;
+    }
+    
+    // Helper Methods for Data Collection and Parsing
+    
+    /**
+     * Parse time response data from device
+     */
+    parseTimeResponse(data, protocol) {
+        try {
+            // Basic time parsing - would need protocol-specific implementation
+            if (data.length < 8) {
+                throw new Error('Insufficient time data received');
+            }
+            
+            // Extract time components (this is a simplified example)
+            const hours = data[2] || 0;
+            const minutes = data[3] || 0;
+            const month = data[4] || 1;
+            const day = data[5] || 1;
+            const year = 2000 + (data[6] || 24);
+            
+            const timeDate = new Date(year, month - 1, day, hours, minutes);
+            
+            return {
+                formatted: timeDate.toLocaleString(),
+                raw: data,
+                components: { hours, minutes, month, day, year }
+            };
+        } catch (error) {
+            return {
+                formatted: 'Parse error',
+                raw: data,
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Parse alarm response data from device
+     */
+    parseAlarmResponse(data, protocol) {
+        try {
+            const alarms = [];
+            const protocolInfo = this.protocolCapabilities[protocol];
+            const maxAlarms = protocolInfo.maxAlarms || 5;
+            
+            // Parse alarm data (simplified - would need protocol-specific implementation)
+            for (let i = 0; i < Math.min(maxAlarms, Math.floor(data.length / 16)); i++) {
+                const offset = i * 16;
+                const alarmData = data.slice(offset, offset + 16);
+                
+                if (alarmData.length >= 8) {
+                    alarms.push({
+                        number: i + 1,
+                        hours: alarmData[2] || 0,
+                        minutes: alarmData[3] || 0,
+                        enabled: (alarmData[7] || 0) > 0,
+                        message: this.parseAlarmMessage(alarmData.slice(8, 16))
+                    });
+                }
+            }
+            
+            return {
+                count: alarms.filter(a => a.enabled).length,
+                alarms: alarms
+            };
+        } catch (error) {
+            return {
+                count: 0,
+                alarms: [],
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Parse EEPROM response data from device
+     */
+    parseEepromResponse(data, protocol) {
+        try {
+            const phoneNumbers = [];
+            const appointments = [];
+            
+            // Parse EEPROM data (simplified - would need protocol-specific implementation)
+            // This is a basic parser that would need to be enhanced for each protocol
+            
+            let offset = 0;
+            while (offset < data.length - 32) {
+                const entryType = data[offset];
+                
+                if (entryType === 0x01) { // Phone number entry
+                    const phoneData = data.slice(offset + 1, offset + 25);
+                    const phone = this.parsePhoneNumberEntry(phoneData);
+                    if (phone.name || phone.number) {
+                        phoneNumbers.push(phone);
+                    }
+                    offset += 25;
+                } else if (entryType === 0x02) { // Appointment entry
+                    const appointmentData = data.slice(offset + 1, offset + 17);
+                    const appointment = this.parseAppointmentEntry(appointmentData);
+                    if (appointment.message) {
+                        appointments.push(appointment);
+                    }
+                    offset += 17;
+                } else {
+                    offset++;
+                }
+            }
+            
+            return {
+                phoneNumbers: phoneNumbers,
+                appointments: appointments
+            };
+        } catch (error) {
+            return {
+                phoneNumbers: [],
+                appointments: [],
+                error: error.message
+            };
+        }
+    }
+    
+    /**
+     * Collect alarm data from UI
+     */
+    collectAlarmDataFromUI() {
+        const alarms = [];
+        
+        for (let i = 1; i <= 3; i++) {
+            const enabledCheckbox = document.getElementById(`alarm${i}-enabled`);
+            const timeInput = document.getElementById(`alarm${i}-time`);
+            const daysSelect = document.getElementById(`alarm${i}-days`);
+            
+            if (enabledCheckbox && enabledCheckbox.checked && timeInput && timeInput.value) {
+                const [hours, minutes] = timeInput.value.split(':').map(Number);
+                const alarmTime = new Date();
+                alarmTime.setHours(hours, minutes, 0, 0);
+                
+                alarms.push({
+                    number: i,
+                    audible: true, // Default to audible
+                    time: alarmTime,
+                    message: `Alarm ${i}`,
+                    days: daysSelect ? daysSelect.value : 'daily'
+                });
+            }
+        }
+        
+        return alarms;
+    }
+    
+    /**
+     * Collect EEPROM data from UI
+     */
+    collectEepromDataFromUI() {
+        const phoneNumbers = [];
+        const appointments = [];
+        
+        // Collect phone numbers
+        const phoneItems = document.querySelectorAll('.phone-item');
+        phoneItems.forEach((item, index) => {
+            const nameInput = item.querySelector('.phone-name');
+            const numberInput = item.querySelector('.phone-number');
+            
+            if (nameInput && numberInput && nameInput.value.trim() && numberInput.value.trim()) {
+                phoneNumbers.push({
+                    name: nameInput.value.trim(),
+                    number: numberInput.value.trim(),
+                    type: ' ' // Default type
+                });
+            }
+        });
+        
+        // Collect appointments
+        const appointmentItems = document.querySelectorAll('.appointment-item');
+        appointmentItems.forEach((item, index) => {
+            const dateInput = item.querySelector('.appointment-date');
+            const timeInput = item.querySelector('.appointment-time');
+            const descInput = item.querySelector('.appointment-desc');
+            
+            if (dateInput && timeInput && descInput && 
+                dateInput.value && timeInput.value && descInput.value.trim()) {
+                
+                const appointmentDate = new Date(dateInput.value + 'T' + timeInput.value);
+                
+                appointments.push({
+                    time: appointmentDate,
+                    message: descInput.value.trim()
+                });
+            }
+        });
+        
+        return {
+            phoneNumbers: phoneNumbers,
+            appointments: appointments
+        };
+    }
+    
+    /**
+     * Populate alarm UI with data
+     */
+    populateAlarmUI(alarms) {
+        alarms.forEach((alarm, index) => {
+            if (index < 3) { // Only populate first 3 alarms in UI
+                const alarmNumber = index + 1;
+                const enabledCheckbox = document.getElementById(`alarm${alarmNumber}-enabled`);
+                const timeInput = document.getElementById(`alarm${alarmNumber}-time`);
+                
+                if (enabledCheckbox) {
+                    enabledCheckbox.checked = alarm.enabled || false;
+                }
+                
+                if (timeInput && alarm.hours !== undefined && alarm.minutes !== undefined) {
+                    const timeString = `${alarm.hours.toString().padStart(2, '0')}:${alarm.minutes.toString().padStart(2, '0')}`;
+                    timeInput.value = timeString;
+                }
+            }
+        });
+    }
+    
+    /**
+     * Populate EEPROM UI with data
+     */
+    populateEepromUI(eepromData) {
+        // Populate phone numbers
+        const phoneItems = document.querySelectorAll('.phone-item');
+        eepromData.phoneNumbers.forEach((phone, index) => {
+            if (index < phoneItems.length) {
+                const item = phoneItems[index];
+                const nameInput = item.querySelector('.phone-name');
+                const numberInput = item.querySelector('.phone-number');
+                
+                if (nameInput) nameInput.value = phone.name || '';
+                if (numberInput) numberInput.value = phone.number || '';
+            }
+        });
+        
+        // Populate appointments
+        const appointmentItems = document.querySelectorAll('.appointment-item');
+        eepromData.appointments.forEach((appointment, index) => {
+            if (index < appointmentItems.length) {
+                const item = appointmentItems[index];
+                const dateInput = item.querySelector('.appointment-date');
+                const timeInput = item.querySelector('.appointment-time');
+                const descInput = item.querySelector('.appointment-desc');
+                
+                if (appointment.time && dateInput && timeInput) {
+                    const date = new Date(appointment.time);
+                    dateInput.value = date.toISOString().split('T')[0];
+                    timeInput.value = date.toTimeString().split(' ')[0].substring(0, 5);
+                }
+                
+                if (descInput) descInput.value = appointment.message || '';
+            }
+        });
+    }
+    
+    /**
+     * Helper methods for parsing specific data types
+     */
+    parseAlarmMessage(messageBytes) {
+        // Convert bytes to string, removing null bytes
+        return String.fromCharCode(...messageBytes.filter(b => b > 0)).trim();
+    }
+    
+    parsePhoneNumberEntry(data) {
+        // Parse phone number entry (simplified)
+        const name = String.fromCharCode(...data.slice(0, 12).filter(b => b > 0)).trim();
+        const number = String.fromCharCode(...data.slice(12, 24).filter(b => b > 0)).trim();
+        
+        return { name, number };
+    }
+    
+    parseAppointmentEntry(data) {
+        // Parse appointment entry (simplified)
+        const message = String.fromCharCode(...data.slice(8, 16).filter(b => b > 0)).trim();
+        const month = data[0] || 1;
+        const day = data[1] || 1;
+        const hours = data[2] || 0;
+        const minutes = data[3] || 0;
+        
+        const appointmentDate = new Date(2024, month - 1, day, hours, minutes);
+        
+        return {
+            time: appointmentDate,
+            message: message
+        };
+    }
+    
+    /**
+     * Individual data reading methods for Read All functionality
+     */
+    async readTimeData() {
+        try {
+            const result = await this.client.sync({
+                writeData: true,
+                readData: true,
+                expectedReadBytes: 16,
+                readTimeout: 3000
+            });
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                const protocol = parseInt(this.protocolSelect.value);
+                const timeData = this.parseTimeResponse(result.readResult.data, protocol);
+                return { success: true, data: timeData };
+            } else {
+                return { success: false, error: 'No time data received' };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+    
+    async readAlarmData() {
+        try {
+            const protocol = parseInt(this.protocolSelect.value);
+            const protocolInfo = this.protocolCapabilities[protocol];
+            
+            const result = await this.client.sync({
+                writeData: true,
+                readData: true,
+                expectedReadBytes: protocolInfo.maxAlarms * 16,
+                readTimeout: 3000
+            });
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                const alarmData = this.parseAlarmResponse(result.readResult.data, protocol);
+                return { success: true, data: alarmData };
+            } else {
+                return { success: false, error: 'No alarm data received' };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+    
+    async readEepromData() {
+        try {
+            const result = await this.client.sync({
+                writeData: true,
+                readData: true,
+                expectedReadBytes: 512,
+                readTimeout: 5000
+            });
+            
+            if (result.success && result.readResult && result.readResult.data.length > 0) {
+                const protocol = parseInt(this.protocolSelect.value);
+                const eepromData = this.parseEepromResponse(result.readResult.data, protocol);
+                return { success: true, data: eepromData };
+            } else {
+                return { success: false, error: 'No EEPROM data received' };
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
     }
 }
 
